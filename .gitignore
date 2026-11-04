@@ -1,0 +1,38 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.pem
+*.pfx
+*.keystore
+*.jks
+local.settings.json
+
+# JavaScript tooling and build output
+node_modules/
+.next/
+.vercel/
+out/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+
+# Android local/build/signing data
+**/.gradle/
+**/build/
+**/local.properties
+**/release/**/*.apk
+**/release/**/*.aab
+
+# Terraform, Azure CLI, database exports
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.bacpac
+*.bak
+*.log
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,13 @@
+{
+  "name": "totem",
+  "private": true,
+  "workspaces": ["totem-backoffice"],
+  "engines": { "node": ">=22.12.0" },
+  "dependencies": { "@azure/identity": "^4.13.1" },
+  "scripts": {
+    "dev": "npm --workspace totem-backoffice run dev",
+    "build": "npm --workspace totem-backoffice run build",
+    "typecheck": "npm --workspace totem-backoffice run typecheck",
+    "test": "npm --workspace totem-backoffice run test"
+  }
+}
