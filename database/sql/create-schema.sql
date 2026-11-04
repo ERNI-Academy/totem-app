@@ -132,9 +132,25 @@ BEGIN
     Sha256 char(64) NOT NULL,
     StorageKey nvarchar(600) NOT NULL,
     CreatedBy uniqueidentifier NULL,
+    Environment varchar(20) NOT NULL CONSTRAINT DF_Assets_Environment DEFAULT 'development',
     CreatedAt datetime2(3) NOT NULL CONSTRAINT DF_Assets_CreatedAt DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT CK_Assets_Environment CHECK (Environment IN ('development','production')),
     CONSTRAINT FK_Assets_Users FOREIGN KEY (CreatedBy) REFERENCES dbo.Users(Id)
   );
+END;
+GO
+
+-- Upgrade an existing database; pre-existing media belongs to local development.
+IF COL_LENGTH(N'dbo.Assets', N'Environment') IS NULL
+BEGIN
+  ALTER TABLE dbo.Assets ADD Environment varchar(20) NOT NULL
+    CONSTRAINT DF_Assets_Environment DEFAULT 'development' WITH VALUES;
+END;
+GO
+IF OBJECT_ID(N'dbo.CK_Assets_Environment', N'C') IS NULL
+BEGIN
+  ALTER TABLE dbo.Assets ADD CONSTRAINT CK_Assets_Environment
+    CHECK (Environment IN ('development','production'));
 END;
 GO
 

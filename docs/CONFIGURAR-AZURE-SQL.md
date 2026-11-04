@@ -65,6 +65,8 @@ Usaremos una cuenta de almacenamiento separada en el mismo grupo `totem-rg`. La 
 
 Los archivos se subirán al contenedor correspondiente. La tabla `dbo.Assets` ya guarda sus metadatos y `StorageKey`; el contenido binario no se guarda en SQL. Azure recomienda mantener los contenedores privados salvo que se necesite acceso anónimo. [Crear cuenta de Storage](https://learn.microsoft.com/en-us/azure/storage/common/storage-account-create) · [Crear contenedores](https://learn.microsoft.com/en-us/azure/storage/blobs/blob-containers-portal) · [Acceso anónimo](https://learn.microsoft.com/en-us/azure/storage/blobs/anonymous-read-access-configure)
 
+La biblioteca también separa los metadatos con `dbo.Assets.Environment`: `APP_ENV=local` y `preview` usan `development`; `APP_ENV=production` usa `production`. Así, aunque ambos despliegues apunten a la misma base SQL, cada uno lista, sirve y elimina solo sus propios medios. La migración asigna los registros existentes a `development`, que corresponde a las imágenes subidas desde el entorno local.
+
 ### CORS para carga desde el navegador
 
 La aplicación dará permisos SAS breves para un blob individual y el navegador enviará el archivo directamente a Azure. En la cuenta de Storage abre **Resource sharing (CORS) → Blob service** y configura:
@@ -141,6 +143,23 @@ AZURE_STORAGE_CONTAINER=totem-media-dev
 4. Pulsa **Redeploy** o despliega el commit desde Vercel. Los handlers `/api` ejecutan en el servidor; la cadena no forma parte de JavaScript público.
 5. Abre la URL de producción `/setup`, crea el admin y, a continuación, elimina `INITIAL_ADMIN_SETUP_KEY` de Vercel y vuelve a desplegar. Una vez inicializado, el endpoint setup también rechaza cualquier creación adicional.
 6. Prueba inicio de sesión, listado y guardado en producción.
+
+### Aplicar la separación de medios en una base ya creada
+
+1. Abre `database/sql/create-schema.sql` desde el repositorio.
+2. En Azure Portal abre la base `totemdb` → **Query editor**, inicia sesión con Microsoft Entra y pega el script completo.
+3. Ejecuta el script. Es idempotente: crea lo que falte y añade `Environment` a `dbo.Assets`; no borra archivos ni metadatos existentes. Los registros previos se marcan como `development`.
+4. Confirma el resultado con:
+
+```sql
+SELECT Environment, COUNT(*) AS AssetCount
+FROM dbo.Assets
+GROUP BY Environment;
+```
+
+5. Despliega el código actualizado. Local debe tener `APP_ENV=local` y `AZURE_STORAGE_CONTAINER=totem-media-dev`; Vercel Production, `APP_ENV=production` y `AZURE_STORAGE_CONTAINER=totem-media`.
+
+Si ya habías cargado medios de producción antes de esta migración, vuelve a subirlos desde producción después del despliegue para que queden registrados con `Environment='production'`.
 
 Para Preview utiliza **otra base de pruebas** y secretos diferentes. No conectes Preview ni desarrollo al mismo SQL que contiene producción.
 

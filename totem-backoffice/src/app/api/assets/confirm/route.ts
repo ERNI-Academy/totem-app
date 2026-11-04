@@ -5,6 +5,7 @@ import { getDb, sql } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { apiError } from "@/lib/http";
 import { getBlobClient } from "@/lib/blobStorage";
+import { getMediaEnvironment } from "@/lib/env";
 
 export const runtime = "nodejs";
 const schema = z.object({ assetId: z.uuid(), blobName: z.string().regex(/^assets\/[0-9a-f-]{36}$/i), fileName: z.string().trim().min(1).max(260), contentType: z.enum(["image/jpeg", "image/png", "image/webp"]) });
@@ -42,7 +43,8 @@ export async function POST(request: Request) {
       .input("type", sql.VarChar(120), body.contentType).input("size", sql.BigInt, size)
       .input("hash", sql.Char(64), sha256).input("key", sql.NVarChar(600), body.blobName)
       .input("user", sql.UniqueIdentifier, auth.user.id)
-      .query("INSERT dbo.Assets(Id,FileName,ContentType,SizeBytes,Sha256,StorageKey,CreatedBy) OUTPUT inserted.Id AS id,inserted.FileName AS fileName,inserted.ContentType AS contentType,inserted.SizeBytes AS sizeBytes,inserted.CreatedAt AS createdAt VALUES(@id,@name,@type,@size,@hash,@key,@user)");
+      .input("environment", sql.VarChar(20), getMediaEnvironment())
+      .query("INSERT dbo.Assets(Id,FileName,ContentType,SizeBytes,Sha256,StorageKey,CreatedBy,Environment) OUTPUT inserted.Id AS id,inserted.FileName AS fileName,inserted.ContentType AS contentType,inserted.SizeBytes AS sizeBytes,inserted.CreatedAt AS createdAt VALUES(@id,@name,@type,@size,@hash,@key,@user,@environment)");
     return NextResponse.json({ asset: { ...inserted.recordset[0], url: `/api/assets/${body.assetId}/file` } }, { status: 201 });
   } catch (error) { return apiError(error); }
 }

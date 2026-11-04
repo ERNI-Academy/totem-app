@@ -14,3 +14,7 @@ export function getEnv() {
   if (!cached) cached = schema.parse(process.env);
   return cached;
 }
+
+export function getMediaEnvironment(): "development" | "production" {
+  return getEnv().APP_ENV === "production" ? "production" : "development";
+}

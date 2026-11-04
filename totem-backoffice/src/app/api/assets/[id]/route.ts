@@ -3,6 +3,7 @@ import { getDb, sql } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { apiError } from "@/lib/http";
 import { getBlobClient } from "@/lib/blobStorage";
+import { getMediaEnvironment } from "@/lib/env";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ id: string }> };
@@ -13,8 +14,8 @@ export async function DELETE(_request: Request, { params }: Context) {
     const { id } = await params; const db = await getDb(); const transaction = new sql.Transaction(db);
     await transaction.begin();
     try {
-      const assetResult = await new sql.Request(transaction).input("id", sql.UniqueIdentifier, id)
-        .query<{ storageKey: string }>("SELECT StorageKey AS storageKey FROM dbo.Assets WITH (XLOCK,HOLDLOCK) WHERE Id=@id");
+      const assetResult = await new sql.Request(transaction).input("id", sql.UniqueIdentifier, id).input("environment", sql.VarChar(20), getMediaEnvironment())
+        .query<{ storageKey: string }>("SELECT StorageKey AS storageKey FROM dbo.Assets WITH (XLOCK,HOLDLOCK) WHERE Id=@id AND Environment=@environment");
       const asset = assetResult.recordset[0];
       if (!asset) { await transaction.rollback(); return NextResponse.json({ error: "Image not found." }, { status: 404 }); }
 
