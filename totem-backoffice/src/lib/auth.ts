@@ -1,52 +1,42 @@
 import "server-only";
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { cookies } from "next/headers";
+import { getDb } from "./db";
 import { getEnv } from "./env";
-import { getDb, sql } from "./db";
-import type { AppUser } from "@/types/content";
 
 const COOKIE = "totem_session";
-const hash = (value: string) => createHash("sha256").update(value).digest("hex");
-function signature(id: string) {
-  const secret = getEnv().AUTH_SESSION_SECRET;
-  if (!secret) throw new Error("AUTH_SESSION_SECRET is not configured.");
-  return createHmac("sha256", secret).update(id).digest("hex");
-}
+const SESSION_DAYS = 14;
+function hash(value: string) { return createHash("sha256").update(value).digest("hex"); }
+
 export async function createSession(userId: string) {
-  const pool = await getDb();
   const token = randomBytes(32).toString("base64url");
-  const expires = new Date(Date.now() + 8 * 60 * 60 * 1000);
-  await pool.request().input("user", sql.UniqueIdentifier, userId).input("hash", sql.Char(64), hash(token)).input("expires", sql.DateTime2, expires)
-    .query("INSERT dbo.UserSessions(UserId,TokenHash,ExpiresAt) VALUES(@user,@hash,@expires)");
-  const jar = await cookies();
-  jar.set(COOKIE, `${token}.${signature(token)}`, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires });
+  const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+  await getDb().query("INSERT INTO user_sessions(user_id,token_hash,expires_at) VALUES($1,$2,$3)", [userId, hash(token), expires]);
+  (await cookies()).set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires });
 }
+
 export async function destroySession() {
-  const jar = await cookies(); const raw = jar.get(COOKIE)?.value;
-  if (raw) {
-    const token = raw.split(".")[0];
-    if (token) { const pool = await getDb(); await pool.request().input("hash", sql.Char(64), hash(token)).query("UPDATE dbo.UserSessions SET RevokedAt=SYSUTCDATETIME() WHERE TokenHash=@hash AND RevokedAt IS NULL"); }
-  }
+  const jar = await cookies(); const token = jar.get(COOKIE)?.value;
+  if (token) await getDb().query("UPDATE user_sessions SET revoked_at=now() WHERE token_hash=$1 AND revoked_at IS NULL", [hash(token)]);
   jar.delete(COOKIE);
 }
-export async function getCurrentUser(): Promise<AppUser | null> {
-  const raw = (await cookies()).get(COOKIE)?.value;
-  if (!raw) return null;
-  const [token, provided] = raw.split(".");
-  if (!token || !provided) return null;
-  const expected = signature(token);
-  const a = Buffer.from(expected); const b = Buffer.from(provided);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  const pool = await getDb();
-  const result = await pool.request().input("hash", sql.Char(64), hash(token)).query<AppUser>(
-    "SELECT u.Id AS id,u.Email AS email,u.DisplayName AS displayName,u.Role AS role FROM dbo.UserSessions s JOIN dbo.Users u ON u.Id=s.UserId WHERE s.TokenHash=@hash AND s.RevokedAt IS NULL AND s.ExpiresAt>SYSUTCDATETIME() AND u.IsActive=1"
+
+export type CurrentUser = { id: string; email: string; displayName: string; role: "admin" | "user" };
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const token = (await cookies()).get(COOKIE)?.value;
+  if (!token) return null;
+  const result = await getDb().query<CurrentUser>(
+    "SELECT u.id, u.email, u.display_name AS \"displayName\", u.role FROM user_sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.revoked_at IS NULL AND s.expires_at>now() AND u.is_active=true",
+    [hash(token)],
   );
-  return result.recordset[0] ?? null;
+  return result.rows[0] ?? null;
 }
+
 export async function requireUser(adminOnly = false) {
   const user = await getCurrentUser();
   if (!user) return { error: Response.json({ error: "Authentication required." }, { status: 401 }) } as const;
   if (adminOnly && user.role !== "admin") return { error: Response.json({ error: "Administrator access required." }, { status: 403 }) } as const;
   return { user } as const;
 }
-export function passwordHash(value: string) { return hash(value); }
+
+export function setupEnabled() { return Boolean(getEnv().INITIAL_ADMIN_SETUP_KEY); }

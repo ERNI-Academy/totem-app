@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "@/lib/db";
+import type { DbClient } from "./db";
 import type { VisualisationDocument } from "@/types/content";
 
 function referencedAssetIds(document: VisualisationDocument): string[] {
@@ -13,18 +13,15 @@ function referencedAssetIds(document: VisualisationDocument): string[] {
   return [...ids];
 }
 
-export async function syncDraftAssetReferences(transaction: sql.Transaction, visualisationId: string, document: VisualisationDocument) {
-  await new sql.Request(transaction).input("visualisation", sql.UniqueIdentifier, visualisationId)
-    .query("DELETE dbo.DraftAssets WHERE VisualisationId=@visualisation");
+export async function syncDraftAssetReferences(client: DbClient, visualisationId: string, document: VisualisationDocument) {
+  await client.query("DELETE FROM draft_assets WHERE visualisation_id=$1", [visualisationId]);
   for (const assetId of referencedAssetIds(document)) {
-    await new sql.Request(transaction).input("visualisation", sql.UniqueIdentifier, visualisationId).input("asset", sql.UniqueIdentifier, assetId)
-      .query("INSERT dbo.DraftAssets(VisualisationId,AssetId) VALUES(@visualisation,@asset)");
+    await client.query("INSERT INTO draft_assets(visualisation_id,asset_id) VALUES($1,$2)", [visualisationId, assetId]);
   }
 }
 
-export async function syncVersionAssetReferences(transaction: sql.Transaction, versionId: string, document: VisualisationDocument) {
+export async function syncVersionAssetReferences(client: DbClient, versionId: string, document: VisualisationDocument) {
   for (const assetId of referencedAssetIds(document)) {
-    await new sql.Request(transaction).input("version", sql.UniqueIdentifier, versionId).input("asset", sql.UniqueIdentifier, assetId)
-      .query("INSERT dbo.VersionAssets(VersionId,AssetId) VALUES(@version,@asset)");
+    await client.query("INSERT INTO version_assets(version_id,asset_id) VALUES($1,$2)", [versionId, assetId]);
   }
 }

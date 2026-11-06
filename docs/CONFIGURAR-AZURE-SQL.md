@@ -1,4 +1,6 @@
-# Configurar Azure SQL y Blob Storage para Totem
+# LEGACY: Azure SQL y Blob Storage (backend anterior)
+
+> Esta guía describe el backend anterior basado en SQL Server/Azure SQL. El backoffice actual usa PostgreSQL y esta guía no debe utilizarse para configurar su `DATABASE_URL` ni desplegar la base. Para desarrollo local, sigue [Totem Backoffice](../totem-backoffice/README.md). La sección de Blob Storage conserva contexto útil: Azure Blob sigue almacenando los medios.
 
 Guía para crear la base de datos y el almacenamiento de medios **manualmente** en el portal, crear las tablas y vistas, y conectar el backoffice. SQL guarda usuarios, diseños y metadatos; las imágenes y vídeos van en Azure Blob Storage. La contraseña SQL de Vercel debe pertenecer a un usuario de la base `totem-db`, no al administrador del servidor.
 
