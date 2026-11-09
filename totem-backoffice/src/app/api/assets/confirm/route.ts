@@ -24,17 +24,27 @@ export async function POST(request: Request) {
       if (head.length < 16) head = Buffer.concat([head, bytes.subarray(0, 16 - head.length)]);
       hash.update(bytes);
     }
+    const brand = head.toString("ascii", 8, 12).toLowerCase();
+    const heifBrands = ["heic", "heix", "hevc", "hevx", "mif1", "msf1", "avif", "avis"];
+    const mp4Brands = ["isom", "iso2", "mp41", "mp42", "avc1", "m4v ", "msnv", "dash"];
     const actualType = head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff ? "image/jpeg"
       : head.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? "image/png"
-      : head.toString("ascii", 4, 8) === "ftyp" ? "video/mp4"
-      : head.toString("ascii", 0, 4) === "RIFF" && head.toString("ascii", 8, 12) === "WEBP" ? "image/webp" : null;
-    if (actualType !== body.contentType) {
-      await blob.deleteIfExists(); return NextResponse.json({ error: "The file contents do not match the selected image format." }, { status: 400 });
+      : head.toString("ascii", 0, 4) === "RIFF" && head.toString("ascii", 8, 12) === "WEBP" ? "image/webp"
+      : head.toString("ascii", 4, 8) === "ftyp" && mp4Brands.includes(brand) ? "video/mp4" : null;
+    if (!actualType) {
+      const isHeif = head.toString("ascii", 4, 8) === "ftyp" && heifBrands.includes(brand);
+      await blob.deleteIfExists();
+      return NextResponse.json({ error: isHeif
+        ? `“${body.fileName}” parece ser HEIC/AVIF, un formato que no admite la biblioteca. Expórtalo o conviértelo a JPEG o PNG y vuelve a subirlo.`
+        : `No se reconoce el contenido de “${body.fileName}”. Sube un archivo JPEG, PNG, WebP o MP4 válido.` }, { status: 400 });
     }
+    // The extension or browser MIME can be wrong even when the file is a valid
+    // supported image. Trust the detected bytes and correct the Blob metadata.
+    if (actualType !== body.contentType) await blob.setHTTPHeaders({ blobContentType: actualType });
     const result = await getDb().query(
       "INSERT INTO assets(id,file_name,content_type,size_bytes,sha256,storage_key,created_by,environment) VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id,file_name AS \"fileName\",content_type AS \"contentType\",size_bytes AS \"sizeBytes\",created_at AS \"createdAt\"",
-      [body.assetId, body.fileName, body.contentType, size, hash.digest("hex"), body.blobName, auth.user.id, getMediaEnvironment()],
+      [body.assetId, body.fileName, actualType, size, hash.digest("hex"), body.blobName, auth.user.id, getMediaEnvironment()],
     );
-    return NextResponse.json({ asset: { ...result.rows[0], url: `/api/assets/${body.assetId}/file` } }, { status: 201 });
+    return NextResponse.json({ asset: { ...result.rows[0], contentType: actualType, url: `/api/assets/${body.assetId}/file` } }, { status: 201 });
   } catch (error) { return apiError(error); }
 }

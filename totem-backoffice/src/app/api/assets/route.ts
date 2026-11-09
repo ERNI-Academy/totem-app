@@ -14,7 +14,7 @@ export async function GET() {
   try {
     const auth = await requireUser(); if (auth.error) return auth.error;
     const result = await getDb().query(
-      "SELECT id,file_name AS \"fileName\",content_type AS \"contentType\",size_bytes AS \"sizeBytes\",created_at AS \"createdAt\",storage_key LIKE 'totem-original/%' AS \"isSystem\" FROM assets WHERE environment=$1 ORDER BY created_at DESC",
+      "SELECT id,file_name AS \"fileName\",content_type AS \"contentType\",tags, size_bytes AS \"sizeBytes\",created_at AS \"createdAt\",storage_key LIKE 'totem-original/%' AS \"isSystem\" FROM assets WHERE environment=$1 ORDER BY created_at DESC",
       [getMediaEnvironment()],
     );
     return NextResponse.json({ assets: result.rows.map((asset) => ({ ...asset, sizeBytes: Number(asset.sizeBytes), url: `/api/assets/${asset.id}/file` })) });

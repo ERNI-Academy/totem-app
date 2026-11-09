@@ -86,10 +86,12 @@ CREATE TABLE IF NOT EXISTS assets (
   size_bytes bigint NOT NULL CHECK (size_bytes > 0),
   sha256 char(64) NOT NULL,
   storage_key varchar(600) NOT NULL,
+  tags text[] NOT NULL DEFAULT '{}',
   created_by uuid REFERENCES users(id),
   environment varchar(20) NOT NULL DEFAULT 'development' CHECK (environment IN ('development', 'production')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+ALTER TABLE assets ADD COLUMN IF NOT EXISTS tags text[] NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS draft_assets (
   visualisation_id uuid NOT NULL REFERENCES visualisation_drafts(visualisation_id) ON DELETE CASCADE,
