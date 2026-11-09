@@ -12,6 +12,16 @@
   style.textContent = `
     #stage.bo-canvas-mode>section.demos{display:none!important}
     #stage.bo-fullscreen>.hdr,#stage.bo-fullscreen>.hero,#stage.bo-fullscreen>#vband{visibility:hidden}
+    #stage.bo-canvas-mode>.hdr[data-totem-shell="header-bg"]{position:absolute;left:0;top:0;width:1080px;height:110px;bottom:auto}
+    #stage.bo-canvas-mode>.hero[data-totem-shell="hero-bg"]{position:absolute;left:0;top:110px;width:1080px;height:580px;bottom:auto}
+    #stage.bo-canvas-mode>#vband[data-totem-shell="footer-bg"]{position:absolute;left:0;top:1770px;right:auto;bottom:auto;width:1080px;height:150px}
+    #stage.bo-canvas-mode>.hdr[data-totem-shell="header-bg"]{z-index:2}
+    #stage.bo-canvas-mode>.hero[data-totem-shell="hero-bg"]{z-index:2}
+    #stage.bo-canvas-mode>#vband[data-totem-shell="footer-bg"]{z-index:4}
+    [data-totem-shell="header-bg"],[data-totem-shell="hero-bg"],[data-totem-shell="footer-bg"]{box-sizing:border-box}
+    [data-bo-shell-media]{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;pointer-events:none}
+    .hero>.txt{z-index:2}.hero:after{pointer-events:none}.hero.bo-solid-color:after{display:none}
+    #stage.bo-canvas-mode [data-totem-shell][style*="z-index"]{position:absolute}
     #bo-canvas{position:absolute;left:0;top:690px;width:1080px;height:1080px;overflow:hidden;background:#fff;z-index:3}
     #stage.bo-fullscreen>#bo-canvas{top:0;height:1920px;z-index:4}
     .bo-element{position:absolute;display:flex;flex-direction:column;justify-content:center;overflow:hidden;padding:32px;white-space:pre-wrap;line-height:1.12}
@@ -34,12 +44,16 @@
   `;
   document.head.appendChild(style);
   const shell = {
-    logo: '.hdr .logo', tagline: '.hdr .tag', 'hero-video': '#heroVid',
+    'header-bg': '.hdr', logo: '.hdr .logo', tagline: '.hdr .tag',
+    'hero-bg': '.hero', 'hero-video': '#heroVid',
     'hero-eyebrow': '.hero .eyebrow', 'hero-title': '.hero h1', 'hero-subtitle': '.hero p',
-    'footer-eyebrow': '#vband small', 'footer-title': '#vband b', 'footer-subtitle': '#vband .s',
+    'footer-bg': '#vband', 'footer-eyebrow': '#vband small', 'footer-title': '#vband b', 'footer-subtitle': '#vband .s',
     'footer-icon': '#vband .vgo svg',
   };
-  for (const [id, selector] of Object.entries(shell)) document.querySelector(selector)?.setAttribute('data-totem-shell', id);
+  for (const [id, selector] of Object.entries(shell)) {
+    const node=document.querySelector(selector);
+    if(node){node.setAttribute('data-totem-shell',id);if(id==='hero-video')node.dataset.originalSrc=node.getAttribute('src')||'';}
+  }
   const cta = document.querySelector('#vband .vgo');
   if (cta) {
     const label = document.createElement('span');
@@ -74,17 +88,19 @@
   const showSelection = () => {
     const node = selectedCanvas ? document.querySelector(`[data-bo-element="${CSS.escape(selectedCanvas)}"]`) : selectedNode;
     if (!editing || !node?.isConnected) { selection.hidden = true; return; }
+    if(getComputedStyle(node).display==='none'){selection.hidden=true;return;}
     const rect = node.getBoundingClientRect(), stage = stageBox(), s = scale();
     selection.hidden = false;
     Object.assign(selection.style, {left:`${(rect.left-stage.left)*s}px`,top:`${(rect.top-stage.top)*s}px`,width:`${rect.width*s}px`,height:`${rect.height*s}px`});
-    for (const handle of selection.children) handle.style.display = selectedCanvas && !canvasElement(selectedCanvas)?.locked ? '' : 'none';
+    const movable=selectedCanvas?!canvasElement(selectedCanvas)?.locked:!!selectedNode&&state.contentMode==='canvas';
+    for (const handle of selection.children) handle.style.display = movable ? '' : 'none';
   };
   const selectWeb = node => {
     selectedCanvas = null; selectedNode = node;
-    const rect = node.getBoundingClientRect(), stage = stageBox(), s = scale();
+    const rect = node.getBoundingClientRect(), stage = stageBox(), s = scale(),selector=selectorFor(node),saved=window.__TOTEM_WEB_OVERRIDES__?.[selector]||{};
     const text = canEditText(node) ? textOf(node).trim() : '';
     const textItems = text ? [] : [...node.querySelectorAll('*')].filter(n => canEditText(n) && textOf(n).trim()).slice(0,48).map(n => ({selector:selectorFor(n),text:textOf(n).trim()}));
-    send('totem-element-selected', {element:{selector:selectorFor(node),tag:node.tagName.toLowerCase(),text,textEditable:canEditText(node),textItems,src:node.getAttribute('src')||'',x:Math.round((rect.left-stage.left)*s),y:Math.round((rect.top-stage.top)*s),width:Math.round(rect.width*s),height:Math.round(rect.height*s),color:getComputedStyle(node).color}});
+    send('totem-element-selected', {element:{selector,tag:node.tagName.toLowerCase(),text,textEditable:canEditText(node),textItems,src:node.getAttribute('src')||'',x:saved.x??Math.round((rect.left-stage.left)*s),y:saved.y??Math.round((rect.top-stage.top)*s),width:saved.width??Math.round(rect.width*s),height:saved.height??Math.round(rect.height*s),color:getComputedStyle(node).color,background:getComputedStyle(node).backgroundColor}});
     showSelection();
   };
   const selectCanvas = id => {
@@ -100,6 +116,37 @@
     }
     if (value.text !== undefined && canEditText(target) && target.textContent !== value.text) {
       target.textContent = value.text; target.style.whiteSpace = 'pre-line';
+    }
+    const shellId=target.dataset.totemShell;
+    if(shellId){
+      if(value.hidden)target.style.display='none';else if(shellId!=='hero-video'||value.mode!=='color')target.style.removeProperty('display');
+      if(value.background)target.style.backgroundColor=value.background;
+      if(Number.isFinite(value.zIndex))target.style.zIndex=String(value.zIndex);
+      if(shellId==='hero-bg')target.classList.toggle('bo-solid-color',value.mode==='color');
+      if(value.mode==='color'){
+        target.querySelectorAll('[data-bo-shell-media]').forEach(node=>node.remove());
+        if(shellId==='hero-bg'){
+          const video=document.querySelector('#heroVid');if(video)video.style.display='none';
+          target.style.backgroundColor=value.background||'#033778';
+        }
+        if(shellId==='hero-video')target.style.display='none';
+      }else if(shellId==='hero-bg'||shellId==='hero-video'){
+        const video=document.querySelector('#heroVid');
+        if(value.mode==='image'&&value.src){
+          if(video)video.style.display='none';
+          let image=document.querySelector(`[data-bo-shell-media="${shellId}"]`);
+          if(!image){image=document.createElement('img');image.dataset.boShellMedia=shellId;const host=shellId==='hero-video'?target.parentElement:target;host.insertBefore(image,shellId==='hero-bg'?target.querySelector('.txt'):target.nextSibling);}
+          if(image.getAttribute('src')!==value.src)image.src=value.src;
+        }else if(value.mode==='video'&&value.src){
+          document.querySelectorAll('[data-bo-shell-media]').forEach(node=>node.remove());
+          const targetVideo=shellId==='hero-bg'?video:target;
+          if(targetVideo?.matches('video')){targetVideo.style.display='';if(targetVideo.getAttribute('src')!==value.src){targetVideo.src=value.src;targetVideo.load();targetVideo.play().catch(()=>{});}}
+        }else if(value.mode!=='color'&&value.mode!=='image'){
+          document.querySelectorAll('[data-bo-shell-media]').forEach(node=>node.remove());
+          if(video){if(shellId==='hero-bg')video.style.removeProperty('display');const original=video.dataset.originalSrc;if(original&&video.getAttribute('src')!==original){video.src=original;video.load();video.play().catch(()=>{});}}
+          if(shellId==='hero-video')target.style.removeProperty('display');
+        }
+      }
     }
     if (value.src && target.matches('svg')) {
       const image = document.createElement('img'), css = getComputedStyle(target);
@@ -155,7 +202,7 @@
   const applyAll = () => {
     renderCanvas();
     Object.entries(window.__TOTEM_WEB_OVERRIDES__||{}).forEach(([selector,value])=>apply(selector,value));
-    Object.entries(window.__TOTEM_WEB_MEDIA__||{}).forEach(([selector,src])=>apply(selector,{src}));
+    Object.entries(window.__TOTEM_WEB_MEDIA__||{}).forEach(([selector,src])=>apply(selector,{...(window.__TOTEM_WEB_OVERRIDES__?.[selector]||{}),src}));
     showSelection();
   };
   let scheduled=false;
@@ -191,6 +238,14 @@
     if(event.target.closest('[data-bo-back]'))return;
     const handle=event.target.closest('[data-handle]');
     const node=handle?document.querySelector(`[data-bo-element="${CSS.escape(selectedCanvas||'')}"]`):event.target.closest('[data-bo-element]');
+    const shellNode=state.contentMode==='canvas'?(handle?selectedNode:elementTarget(event)):null;
+    if(!node&&!shellNode)return;
+    if(shellNode?.dataset.totemShell){
+      selectWeb(shellNode);event.preventDefault();shellNode.setPointerCapture(event.pointerId);
+      const rect=shellNode.getBoundingClientRect(),box=stageBox(),s=scale();
+      drag={node:shellNode,selector:selectorFor(shellNode),pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,handle:handle?.dataset.handle,original:{x:(rect.left-box.left)*s,y:(rect.top-box.top)*s,width:rect.width*s,height:rect.height*s},next:null};
+      return;
+    }
     if(!node)return;
     selectCanvas(node.dataset.boElement);const el=canvasElement(node.dataset.boElement);if(!el||el.locked)return;
     event.preventDefault();node.setPointerCapture(event.pointerId);
@@ -198,7 +253,7 @@
   },true);
   document.addEventListener('pointermove',event=>{
     if(!drag||event.pointerId!==drag.pointerId)return;event.preventDefault();event.stopImmediatePropagation();
-    const dx=(event.clientX-drag.startX)*scale(),dy=(event.clientY-drag.startY)*scale(),o=drag.original,h=screen().mode==='embedded'?1080:1920;
+    const dx=(event.clientX-drag.startX)*scale(),dy=(event.clientY-drag.startY)*scale(),o=drag.original,h=drag.screenId?(screen().mode==='embedded'?1080:1920):1920;
     let {x,y,width,height}=o;
     if(drag.handle){
       let left=o.x,right=o.x+o.width,top=o.y,bottom=o.y+o.height;
@@ -212,7 +267,7 @@
     Object.assign(drag.node.style,{left:`${x}px`,top:`${y}px`,width:`${width}px`,height:`${height}px`});showSelection();
   },true);
   const finishDrag=event=>{if(!drag||event.pointerId!==drag.pointerId)return;const finished=drag;drag=null;
-    if(finished.next)send('totem-canvas-changed',{id:finished.id,screenId:finished.screenId,changes:finished.next});};
+    if(finished.next){if(finished.selector)send('totem-shell-changed',{selector:finished.selector,changes:finished.next});else send('totem-canvas-changed',{id:finished.id,screenId:finished.screenId,changes:finished.next});}};
   document.addEventListener('pointerup',finishDrag,true);document.addEventListener('pointercancel',finishDrag,true);
   document.addEventListener('keydown',event=>{
     if(!editing&&state.contentMode==='canvas'&&event.key==='Escape'){setViewScreen(state.screens?.[0]?.id);return;}

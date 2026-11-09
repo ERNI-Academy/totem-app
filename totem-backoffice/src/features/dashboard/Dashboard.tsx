@@ -1,8 +1,8 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Moveable from "react-moveable";
 import { ColorPicker } from "@/features/dashboard/ColorPicker";
-import { createCanvasDocument, fitElement, shellElements, shellSelector } from "@/lib/canvasDocument";
+import { createCanvasDocument, fitElement, shellElements, shellSelector, shellSelectorId } from "@/lib/canvasDocument";
 import { TotemPreview } from "@/features/dashboard/TotemPreview";
 import { TotemOriginalExperience, type SelectedWebElement } from "@/features/dashboard/TotemOriginalExperience";
 import { MediaLibrary, type MediaAsset } from "@/features/media/MediaLibrary";
@@ -126,6 +126,8 @@ export function Dashboard() {
   const [items, setItems] = useState<Visualisation[]>([]),
     [selected, setSelected] = useState<Visualisation | null>(null),
     [draft, setDraft] = useState<VisualisationDocument | null>(null);
+  const savedDraft = useRef<string | null>(null);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
   const [tab, setTab] = useState<Tab>("visualisations"),
     [activeScreen, setActiveScreen] = useState("home"),
     [activeElement, setActiveElement] = useState<string | null>(null);
@@ -146,6 +148,8 @@ export function Dashboard() {
   const chosen = screen?.elements.find(
     (x) => x.id === activeElement && !x.locked,
   );
+  const selectedShellId = shellSelectorId(webSelection?.selector ?? "");
+  const hasUnsavedChanges = Boolean(selected && draft && !selected.isProtected && savedDraft.current !== JSON.stringify(draft));
   const canvasRef = useCallback(
     (node: HTMLDivElement | null) => {
       if (node && preview) node.focus();
@@ -217,8 +221,10 @@ export function Dashboard() {
     setDraft(null);
   }
   function selectItem(item: Visualisation) {
+    const nextDraft = structuredClone(item.document ?? initialDoc(item.name));
     setSelected(item);
-    setDraft(structuredClone(item.document ?? initialDoc(item.name)));
+    setDraft(nextDraft);
+    savedDraft.current = JSON.stringify(nextDraft);
     setActiveScreen(item.document?.screens[0]?.id ?? "home");
     setActiveElement(null);
     setWebSelection(null);
@@ -253,11 +259,28 @@ export function Dashboard() {
       const r=await fetch(`/api/visualisations/${selected.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selected.name,revision:selected.revision,document:draft})});
       const d=await r.json();
       if(!r.ok){setNotice(d.error||"Could not save");return false;}
+      savedDraft.current = JSON.stringify(draft);
       setSelected({...selected,revision:d.revision,updatedAt:new Date().toISOString()});
       setNotice("All changes saved");await reload();return true;
     } catch {
       setNotice("Could not save. Check the connection and try again.");return false;
     } finally {setSaving(false);}
+  }
+  function leaveEditor() {
+    setShowUnsavedModal(false);
+    savedDraft.current = null;
+    setSelected(null);
+    setDraft(null);
+    setPreview(false);
+    setNotice("");
+    void reload();
+  }
+  function requestLeaveEditor() {
+    if (hasUnsavedChanges) setShowUnsavedModal(true);
+    else leaveEditor();
+  }
+  async function saveAndLeaveEditor() {
+    if (await save()) leaveEditor();
   }
   async function publish() {
     if (!selected || selected.isProtected) return;
@@ -353,12 +376,13 @@ export function Dashboard() {
     setActiveElement(null);setWebSelection(null);setActiveScreen(screens[0]?.id??"home");setShellTarget(id);
   }
   function shellLayers(region: string) {
-    return <><div className="panel-heading layers-title">{region}</div><div className="layer-list shell-layers">{shellElements.filter(item=>item.region===region).map(item=><button type="button" key={item.id} className={shellTarget===item.id?"active":""} onClick={()=>chooseShell(item.id)}>{item.label}</button>)}</div></>;
+    return <><div className="panel-heading layers-title">{region}</div><div className="shell-layers">{shellElements.filter(item=>item.region===region).map(item=>{const selector=shellSelector(item.id),hidden=draft?.webTemplate?.overrides[selector]?.hidden===true;return <div className="shell-layer-row" key={item.id}><button type="button" className={shellTarget===item.id?"active":""} onClick={()=>chooseShell(item.id)}>{item.label}{hidden?" · oculto":""}</button><button type="button" className="shell-layer-visibility" aria-label={hidden?`Mostrar ${item.label}`:`Ocultar ${item.label}`} title={hidden?"Mostrar":"Ocultar"} onClick={()=>{const current=draft?.webTemplate?.overrides[selector]??{};setDraft(d=>d?.webTemplate?{...d,webPublication:undefined,webTemplate:{...d.webTemplate,overrides:{...d.webTemplate.overrides,[selector]:{...current,hidden:!hidden}}}}:d);}}><IconEye size={15}/></button></div>;})}</div></>;
   }
   function pickMedia(asset: MediaAsset) {
     if (selectingWebMedia && webSelection && draft?.webTemplate) {
-      setDraft({ ...draft, webPublication: undefined, webTemplate: { ...draft.webTemplate, media: { ...draft.webTemplate.media, [webSelection.selector]: asset.url } } });
-      setWebSelection({ ...webSelection, src: asset.url });
+      const mode=asset.contentType.startsWith("video/")?"video":"image";
+      setDraft({ ...draft, webPublication: undefined, webTemplate: { ...draft.webTemplate, overrides:{...draft.webTemplate.overrides,[webSelection.selector]:{...draft.webTemplate.overrides[webSelection.selector],mode}}, media: { ...draft.webTemplate.media, [webSelection.selector]: asset.url } } });
+      setWebSelection({ ...webSelection, src: asset.url, mode, hidden:false });
       setSelectingWebMedia(false);
       setTab("visualisations");
       setNotice("Media selected. Save the draft to keep it.");
@@ -373,12 +397,25 @@ export function Dashboard() {
     setTab("visualisations");
     setNotice("Media selected. Save the draft to keep it.");
   }
-  function updateWebOverride(field: keyof import("@/types/content").WebElementOverride, value: string | number, selector = webSelection?.selector) {
+  function updateWebOverride(field: keyof import("@/types/content").WebElementOverride, value: string | number | boolean, selector = webSelection?.selector) {
     if (!draft?.webTemplate || !webSelection || !selector) return;
     const current = draft.webTemplate.overrides[selector] ?? {};
     const next = { ...current, [field]: value };
     setDraft({ ...draft, webPublication: undefined, webTemplate: { ...draft.webTemplate, overrides: { ...draft.webTemplate.overrides, [selector]: next } } });
     if (selector === webSelection.selector) setWebSelection({ ...webSelection, [field]: value });
+  }
+  function setShellMediaMode(mode: "video" | "image" | "color") {
+    if(!draft?.webTemplate||!webSelection)return;
+    const selector=webSelection.selector,media={...draft.webTemplate.media};
+    delete media[selector];
+    updateWebOverride("mode",mode,selector);
+    setDraft(d=>d?.webTemplate?{...d,webPublication:undefined,webTemplate:{...d.webTemplate,media}}:d);
+  }
+  function removeShellElement() {
+    if(!draft?.webTemplate||!webSelection)return;
+    const selector=webSelection.selector,media={...draft.webTemplate.media};delete media[selector];
+    updateWebOverride("hidden",true,selector);
+    setDraft(d=>d?.webTemplate?{...d,webPublication:undefined,webTemplate:{...d.webTemplate,media}}:d);
   }
   function addElement(type: CanvasElement["type"], x?: number, y?: number, screenId = activeScreen) {
     const target=screens.find(s=>s.id===screenId);if(!target)return;
@@ -746,7 +783,7 @@ export function Dashboard() {
           {tab === "media" && (
             <MediaLibrary
               selecting={Boolean(selectingForElement || selectingWebMedia)}
-              mediaType={selectingWebMedia && webSelection?.tag === "video" ? "video" : draft?.screens.flatMap(screen => screen.elements).find(element => element.id === selectingForElement)?.type === "video" ? "video" : "image"}
+              mediaType={selectingWebMedia && (selectedShellId === "hero-bg" || selectedShellId === "hero-video") ? "any" : selectingWebMedia && webSelection?.tag === "video" ? "video" : draft?.screens.flatMap(screen => screen.elements).find(element => element.id === selectingForElement)?.type === "video" ? "video" : "image"}
               protectedAssetIds={protectedAssetIds}
               onPick={pickMedia}
             />
@@ -756,12 +793,7 @@ export function Dashboard() {
               <div className="editor-toolbar">
                 <button
                   className="back-button"
-                  onClick={() => {
-                    setSelected(null);
-                    setDraft(null);
-                    setPreview(false);
-                    void reload();
-                  }}
+                  onClick={requestLeaveEditor}
                 >
                   <IconArrowLeft size={18} /> All visualisations
                 </button>
@@ -933,6 +965,7 @@ export function Dashboard() {
                         onSelect={element=>{setWebSelection(element);setActiveElement(null);setShellTarget(/data-totem-shell="([^"]+)"/.exec(element.selector)?.[1]??null);}}
                         onCanvasSelect={(id,screenId)=>{setActiveElement(id);setActiveScreen(screenId);setWebSelection(null);setShellTarget(null);}}
                         onCanvasChange={updateElement} onCanvasAdd={addElement} onCanvasDelete={removeElement}
+                        onShellChange={(selector,changes)=>Object.entries(changes).forEach(([field,value])=>updateWebOverride(field as keyof import("@/types/content").WebElementOverride,value as string|number,selector))}
                         onScreenChange={screenId=>{setActiveScreen(screenId);setActiveElement(null);}} />
                     </div>
                   ) : (
@@ -1110,6 +1143,13 @@ export function Dashboard() {
                       {(webSelection.textEditable ?? !!webSelection.text) ? <label>Text<textarea aria-label="Text" value={draft.webTemplate.overrides[webSelection.selector]?.text ?? webSelection.text} onChange={e => updateWebOverride("text", e.target.value)}/></label> : /^(img|video|source|svg)$/.test(webSelection.tag) ? null : <small className="web-element-hint">Este elemento contiene otros elementos. Edita sus textos aquí o selecciona un texto directamente en la vista.</small>}
                       {!isCanvas && !!webSelection.textItems?.length && <div className="web-text-items"><strong>Textos dentro de este elemento</strong>{webSelection.textItems.map(item => <label key={item.selector}><span>{item.text}</span><input aria-label={`Editar ${item.text}`} value={draft.webTemplate!.overrides[item.selector]?.text ?? item.text} onChange={e=>updateWebOverride("text",e.target.value,item.selector)}/></label>)}</div>}
                       {/(img|video|source|svg)/.test(webSelection.tag) && <>{!isCanvas && <label>Media path<input value={draft.webTemplate.media?.[webSelection.selector] ?? webSelection.src} onChange={e => { const media={...draft.webTemplate!.media,[webSelection.selector]:e.target.value}; setDraft({...draft,webPublication:undefined,webTemplate:{...draft.webTemplate!,media}}); }}/></label>}<button className="outline-button" onClick={()=>{setSelectingWebMedia(true);setTab("media");}}><IconPhoto size={16}/>Choose media from library</button></>}
+                      {isCanvas && selectedShellId && <>
+                        {(selectedShellId === "hero-bg" || selectedShellId === "hero-video") && <label>Fondo del header<select aria-label="Tipo de fondo del header" value={draft.webTemplate.overrides[webSelection.selector]?.mode ?? "video"} onChange={e=>setShellMediaMode(e.target.value as "video"|"image"|"color")}><option value="video">Vídeo</option><option value="image">Imagen</option><option value="color">Color</option></select></label>}
+                        {(selectedShellId === "header-bg" || selectedShellId === "hero-bg" || selectedShellId === "footer-bg") && <ColorPicker label="Color de fondo" value={draft.webTemplate.overrides[webSelection.selector]?.background ?? (selectedShellId === "header-bg" ? "#ffffff" : "#033778")} onChange={color=>updateWebOverride("background",color)}/>}
+                        {selectedShellId === "hero-bg" && (draft.webTemplate.overrides[webSelection.selector]?.mode ?? "video") !== "color" && <button className="outline-button" onClick={()=>{setSelectingWebMedia(true);setTab("media");}}><IconPhoto size={16}/>{draft.webTemplate.media?.[webSelection.selector] ? "Sustituir imagen o vídeo" : "Elegir imagen o vídeo"}</button>}
+                        {draft.webTemplate.overrides[webSelection.selector]?.hidden ? <button className="outline-button" onClick={()=>updateWebOverride("hidden",false)}>Restaurar elemento</button> : <button className="text-danger" onClick={removeShellElement}>Eliminar elemento</button>}
+                        <div className="layer-controls"><button className="outline-button" onClick={()=>updateWebOverride("zIndex",(draft.webTemplate!.overrides[webSelection.selector]?.zIndex??2)-10)}>Enviar atrás</button><button className="outline-button" onClick={()=>updateWebOverride("zIndex",(draft.webTemplate!.overrides[webSelection.selector]?.zIndex??2)+10)}>Traer al frente</button></div>
+                      </>}
                       <div className="field-grid">
                         {(["x","y","width","height"] as const).map(field => <label key={field}>{field.toUpperCase()}<input type="number" value={draft.webTemplate!.overrides[webSelection.selector]?.[field] ?? webSelection[field]} onChange={e=>updateWebOverride(field,Number(e.target.value))}/></label>)}
                       </div>
@@ -1354,6 +1394,19 @@ export function Dashboard() {
           )}
         </section>
       </div>
+      {showUnsavedModal && (
+        <div className="unsaved-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget) setShowUnsavedModal(false); }}>
+          <div className="unsaved-modal" role="dialog" aria-modal="true" aria-labelledby="unsaved-modal-title" aria-describedby="unsaved-modal-description">
+            <h2 id="unsaved-modal-title">Cambios sin guardar</h2>
+            <p id="unsaved-modal-description">Hay cambios sin guardar en esta visualización. ¿Qué quieres hacer?</p>
+            <div className="unsaved-modal-actions">
+              <button className="outline-button" onClick={() => setShowUnsavedModal(false)}>Seguir editando</button>
+              <button className="text-danger" onClick={leaveEditor}>Salir sin guardar</button>
+              <button className="primary-button compact" disabled={saving} onClick={saveAndLeaveEditor}>{saving ? "Guardando…" : "Guardar y salir"}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

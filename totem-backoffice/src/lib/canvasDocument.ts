@@ -1,12 +1,15 @@
 import type { CanvasElement, VisualisationDocument } from "@/types/content";
 
 export const shellElements = [
+  { id: "header-bg", label: "Fondo del header", region: "Cabecera", kind: "background" },
   { id: "logo", label: "Logo ERNI", region: "Cabecera" },
   { id: "tagline", label: "Logo better ask ERNI", region: "Cabecera" },
-  { id: "hero-video", label: "Vídeo del header", region: "Cabecera" },
+  { id: "hero-bg", label: "Fondo / vídeo del header", region: "Cabecera", kind: "background" },
+  { id: "hero-video", label: "Vídeo del header", region: "Cabecera", kind: "media" },
   { id: "hero-eyebrow", label: "Texto de bienvenida", region: "Cabecera" },
   { id: "hero-title", label: "Título del header", region: "Cabecera" },
   { id: "hero-subtitle", label: "Subtítulo del header", region: "Cabecera" },
+  { id: "footer-bg", label: "Fondo del footer", region: "Pie", kind: "background" },
   { id: "footer-eyebrow", label: "Antetítulo del pie", region: "Pie" },
   { id: "footer-title", label: "Título del pie", region: "Pie" },
   { id: "footer-subtitle", label: "Subtítulo del pie", region: "Pie" },
@@ -14,6 +17,7 @@ export const shellElements = [
   { id: "footer-icon", label: "Icono del botón", region: "Pie" },
 ];
 export const shellSelector = (id: string) => `[data-totem-shell="${id}"]`;
+export const shellSelectorId = (selector: string) => shellElements.find(item => shellSelector(item.id) === selector)?.id;
 export function isShellSelector(selector: string) {
   return /data-totem-shell|#heroVid|\.hdr\b|\.hero\b|#vband\b|\.vband\b/.test(selector);
 }

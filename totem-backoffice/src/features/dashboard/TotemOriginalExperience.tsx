@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { CanvasElement, ElementType, VisualisationDocument, WebElementOverride } from "@/types/content";
 
-export type SelectedWebElement = { selector: string; tag: string; text: string; textEditable?: boolean; textItems?: { selector: string; text: string }[]; src: string; x: number; y: number; width: number; height: number; color: string };
+export type SelectedWebElement = { selector: string; tag: string; text: string; textEditable?: boolean; textItems?: { selector: string; text: string }[]; src: string; x: number; y: number; width: number; height: number; color: string; background?: string; mode?: "video"|"image"|"color"; hidden?: boolean; zIndex?: number };
 
 type Props = {
   visualisationId: string; document: VisualisationDocument; editing?: boolean;
   activeScreen?: string; activeElement?: string | null; shellTarget?: string | null;
   onSelect?: (element: SelectedWebElement) => void;
+  onShellChange?: (selector:string,changes:Partial<WebElementOverride>)=>void;
   onCanvasSelect?: (id: string | null, screenId: string) => void;
   onCanvasChange?: (id: string, changes: Partial<CanvasElement>, screenId: string) => void;
   onCanvasAdd?: (type: ElementType, x: number, y: number, screenId: string) => void;
@@ -47,6 +48,7 @@ export function TotemOriginalExperience(props: Props) {
       if(data?.type==='totem-editor-ready'){sendLatest.current();return;}
       if(!p.editing)return;
       if(data?.type==='totem-element-selected')p.onSelect?.(data.element);
+      if(data?.type==='totem-shell-changed')p.onShellChange?.(data.selector,data.changes);
       if(data?.type==='totem-canvas-selected')p.onCanvasSelect?.(data.id,data.screenId);
       if(data?.type==='totem-canvas-changed')p.onCanvasChange?.(data.id,data.changes,data.screenId);
       if(data?.type==='totem-canvas-add')p.onCanvasAdd?.(data.elementType,data.x,data.y,data.screenId);
