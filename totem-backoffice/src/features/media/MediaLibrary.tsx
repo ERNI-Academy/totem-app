@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import { BlockBlobClient } from "@azure/storage-blob";
 import { IconPhoto, IconPlus, IconTrash } from "@tabler/icons-react";
 
-export type MediaAsset = { id: string; fileName: string; contentType: string; sizeBytes: number; createdAt: string; url: string };
+export type MediaAsset = { id: string; fileName: string; contentType: string; sizeBytes: number; createdAt: string; url: string; isSystem?: boolean };
 
-export function MediaLibrary({ selecting, protectedAssetIds, onPick }: { selecting: boolean; protectedAssetIds: string[]; onPick: (asset: MediaAsset) => void }) {
+export function MediaLibrary({ selecting, protectedAssetIds, onPick, mediaType }: { mediaType?: "image" | "video"; selecting: boolean; protectedAssetIds: string[]; onPick: (asset: MediaAsset) => void }) {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -32,7 +32,7 @@ export function MediaLibrary({ selecting, protectedAssetIds, onPick }: { selecti
         const result = await confirmation.json();
         if (!confirmation.ok) throw new Error(result.error || `Could not add ${file.name} to the library.`);
       }
-      setMessage(`${files.length} image${files.length === 1 ? "" : "s"} added to the shared library.`);
+      setMessage(`${files.length} media file${files.length === 1 ? "" : "s"} added to the shared library.`);
       setRefresh((value) => value + 1);
     } catch (error) { setMessage(error instanceof Error ? error.message : "Upload failed."); }
     finally { setBusy(false); }
@@ -53,11 +53,11 @@ export function MediaLibrary({ selecting, protectedAssetIds, onPick }: { selecti
   }
 
   return <div className="page-heading" style={{ display: "block" }}>
-    <div className="page-heading"><div><div className="eyebrow">SHARED ASSETS</div><h1>Media library</h1><p>Images are shared by users of this environment and stored in its private Azure Blob container.</p></div>
-      <label className="primary-button compact media-upload"><IconPlus size={17}/>{busy ? "Uploading…" : "Upload images"}<input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={busy} onChange={(event) => { void upload(event.target.files); event.currentTarget.value = ""; }}/></label>
+    <div className="page-heading"><div><div className="eyebrow">SHARED ASSETS</div><h1>Media library</h1><p>Images, reusable PNG icons and videos are shared by users of this environment and stored in its private Azure Blob container.</p></div>
+      <label className="primary-button compact media-upload"><IconPlus size={17}/>{busy ? "Uploading…" : "Upload media"}<input type="file" accept={mediaType === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp"} multiple disabled={busy} onChange={(event) => { void upload(event.target.files); event.currentTarget.value = ""; }}/></label>
     </div>
-    {selecting && <p className="media-hint">Choose an image to add it to the selected canvas element.</p>}
+    {selecting && <p className="media-hint">Choose a {mediaType === "video" ? "video" : "PNG icon or image"} to add it to the selected element.</p>}
     {message && <p role="status" className="media-message">{message}</p>}
-    {assets.length ? <div className="media-grid">{assets.map((asset) => {const inUse=protectedAssetIds.includes(asset.id);return <article className="media-card" key={asset.id}><button className="media-card-pick" onClick={() => selecting && onPick(asset)} disabled={!selecting} title={selecting ? `Use ${asset.fileName}` : asset.fileName}><img src={asset.url} alt={asset.fileName}/><span>{asset.fileName}</span><small>{(asset.sizeBytes / 1024).toFixed(0)} KB</small></button><button className="media-card-delete" onClick={()=>void remove(asset)} disabled={busy||inUse} title={inUse?"Used by the open draft":"Delete image"}><IconTrash size={16}/>Delete</button></article>;})}</div> : <div className="empty-state"><div className="empty-icon"><IconPhoto size={28}/></div><h2>Your library is empty</h2><p>Upload JPEG, PNG or WebP images up to 20 MB.</p></div>}
+    {assets.length ? <div className="media-grid">{assets.map((asset) => {const inUse=protectedAssetIds.includes(asset.id)||Boolean(asset.isSystem);const matchesType=!mediaType||asset.contentType.startsWith(mediaType+"/");return <article className="media-card" key={asset.id}><button className="media-card-pick" onClick={() => selecting && onPick(asset)} disabled={!selecting||!matchesType} title={selecting ? `Use ${asset.fileName}` : asset.fileName}>{asset.contentType.startsWith("video/")?<video src={asset.url} muted playsInline preload="metadata"/>:<img src={asset.url} alt={asset.fileName}/>}<span>{asset.fileName}</span><small>{(asset.sizeBytes / 1024).toFixed(0)} KB</small></button><button className="media-card-delete" onClick={()=>void remove(asset)} disabled={busy||inUse} title={asset.isSystem?"Default Totem original resource":inUse?"Used by the open draft":"Delete media"}><IconTrash size={16}/>Delete</button></article>;})}</div> : <div className="empty-state"><div className="empty-icon"><IconPhoto size={28}/></div><h2>Your library is empty</h2><p>Upload JPG, PNG, WebP or MP4 files (up to 250 MB).</p></div>}
   </div>;
 }

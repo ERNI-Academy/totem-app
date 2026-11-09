@@ -1,0 +1,119 @@
+{
+  "sourceSha256": "28cc06e054400067344c4e79aba6f34daf42d8e50bd83bc0a6a363a3d237d69d",
+  "webSha256": "4b86ebf6b9b8b015992d1933028b7a4de5e9b747dfa9473ec049012d3df1466b",
+  "packSha256": "4b6909389320d3d2bac710214852775ad03595c35d12cabcfd66245ca447f524",
+  "verifiedAt": "2026-11-09T11:30:33.161Z",
+  "containers": {
+    "totem-media-dev": {
+      "resources": 104,
+      "downloadedBytes": 90803683,
+      "sha256Matches": true
+    },
+    "totem-media": {
+      "resources": 104,
+      "downloadedBytes": 90803683,
+      "sha256Matches": true
+    }
+  },
+  "library": [
+    {
+      "environment": "development",
+      "count": 43
+    },
+    {
+      "environment": "production",
+      "count": 43
+    }
+  ],
+  "defaultPublication": {
+    "version_number": 5,
+    "experience": {
+      "id": "totem-original",
+      "packSha256": "4b6909389320d3d2bac710214852775ad03595c35d12cabcfd66245ca447f524",
+      "sourceSha256": "28cc06e054400067344c4e79aba6f34daf42d8e50bd83bc0a6a363a3d237d69d",
+      "defaultPublished": true
+    },
+    "webpublication": {
+      "files": [
+        {
+          "path": "fonts/fonts.css",
+          "bytes": 463,
+          "sha256": "8215b44fdabeee966d01d1ccef20b2447a1a596f81642c17f06ff58a3c9e090b"
+        },
+        {
+          "path": "fonts/ssp-300.woff2",
+          "bytes": 14792,
+          "sha256": "46d6a0984aa795b764141232671160e61bdcc49e900de67ca6b35bae25b1ebdd"
+        },
+        {
+          "path": "fonts/ssp-400.woff2",
+          "bytes": 14868,
+          "sha256": "691491f1fc8badab623e1be56f92cc2d98c462b16617c67e1e288d6b061444bc"
+        },
+        {
+          "path": "fonts/ssp-600.woff2",
+          "bytes": 14876,
+          "sha256": "156650610835fe32914722ecfc8dab0ebbb84795e201b842158afa0ea873cfa4"
+        },
+        {
+          "path": "fonts/ssp-700.woff2",
+          "bytes": 14724,
+          "sha256": "06b675a649489d21b7fd33f19b1c6d37e8bd778ded07ecfec26bbc8f11e694f4"
+        },
+        {
+          "path": "index.html",
+          "bytes": 93973,
+          "sha256": "28cc06e054400067344c4e79aba6f34daf42d8e50bd83bc0a6a363a3d237d69d"
+        },
+        {
+          "path": "media/better-ask-erni.png",
+          "bytes": 21299,
+          "sha256": "e952bed3d789b491c9a739171ba02244517552725c3724e9195945eb7528af92"
+        },
+        {
+          "path": "media/erni-logo.png",
+          "bytes": 27800,
+          "sha256": "578409b3aed33917cfdaa2f365c55161fb44ec0f7bcd8e0ae1180d44c30c0ef4"
+        },
+        {
+          "path": "media/hero-poster.jpg",
+          "bytes": 32790,
+          "sha256": "b241253ff392cec1351660e6704bcef0fdf1e9f840b4441400edbf58ffe3299a"
+        },
+        {
+          "path": "media/hero.mp4",
+          "bytes": 4548329,
+          "sha256": "055a94ed3015295bd6c7642433398d1e5aeea94261dfe58070f713582e712063"
+        },
+        {
+          "path": "media/sifu-robot-piano.jpg",
+          "bytes": 189363,
+          "sha256": "dfa6cf907b2de9164ec9037b3ee4cb7e91f70f1d1692e86b1d3737784b34c418"
+        },
+        {
+          "path": "media/sifu.mp4",
+          "bytes": 26330880,
+          "sha256": "1dea57c0561125dbf8237c024d1e584fc5e05fb557edb05b9c73aafb9c1f1a7b"
+        },
+        {
+          "path": "media/talent-arena.mp4",
+          "bytes": 13644631,
+          "sha256": "2880ee35c7adb4a479543ada1ac0ffe0f4071b9b6a115379cc1fb4cd5d01af58"
+        },
+        {
+          "path": "README.md",
+          "bytes": 2381,
+          "sha256": "6eed397c698e95e48279e1843b6403d4b597a3e70cc98d37f06203cf703573cb"
+        },
+        {
+          "path": "vendor/three.min.js",
+          "bytes": 669884,
+          "sha256": "170c6789f43217c96b3170f4b42fafe135de7f7cd48497a4218f9757ee1d49fa"
+        }
+      ],
+      "webSha256": "4b86ebf6b9b8b015992d1933028b7a4de5e9b747dfa9473ec049012d3df1466b",
+      "bundleSha256": "4b86ebf6b9b8b015992d1933028b7a4de5e9b747dfa9473ec049012d3df1466b",
+      "sourceSha256": "28cc06e054400067344c4e79aba6f34daf42d8e50bd83bc0a6a363a3d237d69d"
+    }
+  }
+}

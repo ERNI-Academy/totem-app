@@ -13,6 +13,7 @@ export async function DELETE(_request: Request, { params }: Context) {
     const result = await withTransaction(async (client) => {
       const asset = await client.query<{ storageKey: string }>("SELECT storage_key AS \"storageKey\" FROM assets WHERE id=$1 AND environment=$2 FOR UPDATE", [id, getMediaEnvironment()]);
       const row = asset.rows[0]; if (!row) return { status: 404 as const };
+      if (row.storageKey.startsWith('totem-original/')) return { status: 403 as const };
       const refs = await client.query<{ drafts: string; versions: string }>(
         "SELECT (SELECT count(*) FROM draft_assets WHERE asset_id=$1)::text AS drafts,(SELECT count(*) FROM version_assets WHERE asset_id=$1)::text AS versions", [id],
       );
@@ -23,6 +24,7 @@ export async function DELETE(_request: Request, { params }: Context) {
       return { status: 200 as const };
     });
     if (result.status === 404) return NextResponse.json({ error: "Image not found." }, { status: 404 });
+    if (result.status === 403) return NextResponse.json({ error: "This resource belongs to the default published Totem original." }, { status: 403 });
     if (result.status === 409) return NextResponse.json({ error: `This image is still used in ${result.drafts} draft(s) and ${result.versions} published version(s). Remove it from those visualisations first.` }, { status: 409 });
     return NextResponse.json({ ok: true });
   } catch (error) { return apiError(error); }

@@ -1,13 +1,28 @@
 {
   "name": "totem",
   "private": true,
-  "workspaces": ["totem-backoffice"],
-  "engines": { "node": ">=22.12.0" },
-  "dependencies": { "@azure/identity": "^4.13.1" },
+  "workspaces": [
+    "totem-backoffice"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.13.1"
+  },
   "scripts": {
     "dev": "npm --workspace totem-backoffice run dev",
     "build": "npm --workspace totem-backoffice run build",
     "typecheck": "npm --workspace totem-backoffice run typecheck",
-    "test": "npm --workspace totem-backoffice run test"
+    "test": "npm --workspace totem-backoffice run test",
+    "totem:import": "node scripts/import-totem-original.mjs",
+    "build:totem-apk": "node scripts/build-totem-apk.mjs",
+    "totem:sync-blob": "node --env-file=totem-backoffice/.env.local scripts/sync-totem-blob.mjs",
+    "test:totem": "playwright test --config tests/totem-original/playwright.config.mjs",
+    "test:editor": "playwright test --config tests/backoffice/playwright.config.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "sharp": "^0.35.5"
   }
 }

@@ -1,3 +1,4 @@
+import { documentSchema } from "@/lib/contentSchema";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getDb, withTransaction } from "@/lib/db";
@@ -6,8 +7,7 @@ import { apiError } from "@/lib/http";
 import { syncDraftAssetReferences } from "@/lib/assetReferences";
 import type { VisualisationDocument } from "@/types/content";
 export const runtime = "nodejs";
-const elementSchema=z.object({id:z.string().min(1),type:z.enum(["text","image","video","card","button"]),x:z.number().finite(),y:z.number().finite(),width:z.number().positive().max(1080),height:z.number().positive().max(1920),text:z.string().max(5000).optional(),title:z.string().max(240).optional(),description:z.string().max(2000).optional(),color:z.string().max(32).optional(),fontSize:z.number().positive().max(240).optional(),background:z.string().max(64).optional(),src:z.string().max(1_500_000).optional(),target:z.string().max(120).optional(),locked:z.boolean().optional(),imageNoPadding:z.boolean().optional()});
-const schema=z.object({name:z.string().trim().min(2).max(160),revision:z.number().int().positive(),document:z.object({schemaVersion:z.literal(1),width:z.literal(1080),height:z.literal(1920),name:z.string().max(160),screens:z.array(z.object({id:z.string().min(1),name:z.string().min(1).max(160),mode:z.enum(["embedded","fullscreen"]),elements:z.array(elementSchema).max(250)})).min(1).max(40)})});
+const schema=z.object({name:z.string().trim().min(2).max(160),revision:z.number().int().positive(),document:documentSchema});
 type Context={params:Promise<{id:string}>};
 export async function GET(_request:Request,{params}:Context){
   try{

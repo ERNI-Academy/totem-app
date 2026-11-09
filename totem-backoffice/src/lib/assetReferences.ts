@@ -10,6 +10,10 @@ function referencedAssetIds(document: VisualisationDocument): string[] {
       if (match) ids.add(match[1]);
     }
   }
+  for (const url of Object.values(document.webTemplate?.media ?? {})) {
+    const match = /^\/api\/assets\/([0-9a-f-]{36})\/file(?:\?.*)?$/i.exec(url);
+    if (match) ids.add(match[1]);
+  }
   return [...ids];
 }
 

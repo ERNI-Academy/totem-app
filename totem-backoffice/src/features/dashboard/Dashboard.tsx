@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Moveable from "react-moveable";
 import { ColorPicker } from "@/features/dashboard/ColorPicker";
+import { createCanvasDocument, fitElement, shellElements, shellSelector } from "@/lib/canvasDocument";
 import { TotemPreview } from "@/features/dashboard/TotemPreview";
+import { TotemOriginalExperience, type SelectedWebElement } from "@/features/dashboard/TotemOriginalExperience";
 import { MediaLibrary, type MediaAsset } from "@/features/media/MediaLibrary";
 import {
   IconDeviceTv,
@@ -32,6 +34,19 @@ import type {
   Visualisation,
   VisualisationDocument,
 } from "@/types/content";
+
+const templateMediaUrl = (file: string) => `/api/template-media/${file}`;
+const templateImages = [
+  { file: "hero-poster.jpg", label: "Hero poster" },
+  { file: "sifu-robot-piano.jpg", label: "SIFU piano photo" },
+  { file: "erni-logo.png", label: "ERNI logo" },
+  { file: "better-ask-erni.png", label: "Better ask ERNI logo" },
+];
+const templateVideos = [
+  { file: "hero.mp4", label: "Hero animation" },
+  { file: "sifu.mp4", label: "SIFU: Technology with purpose" },
+  { file: "talent-arena.mp4", label: "Talent Arena" },
+];
 
 const initialDoc = (name: string): VisualisationDocument => ({
   schemaVersion: 1,
@@ -117,12 +132,15 @@ export function Dashboard() {
   const [selectingForElement, setSelectingForElement] = useState<string | null>(
     null,
   );
-  const [previewScreenId, setPreviewScreenId] = useState<string | null>(null);
+  const [webSelection, setWebSelection] = useState<SelectedWebElement | null>(null);
+  const [shellTarget, setShellTarget] = useState<string | null>(null);
+  const [selectingWebMedia, setSelectingWebMedia] = useState(false);
   const [query, setQuery] = useState(""),
     [notice, setNotice] = useState(""),
     [saving, setSaving] = useState(false),
     [preview, setPreview] = useState(false),
     [layerOrder, setLayerOrder] = useState<string[]>([]);
+  const isCanvas = draft?.webTemplate?.contentMode === "canvas";
   const screens = draft?.screens ?? [];
   const screen = screens.find((s) => s.id === activeScreen) ?? screens[0];
   const chosen = screen?.elements.find(
@@ -167,6 +185,10 @@ export function Dashboard() {
         );
         if (match) ids.add(match[1]);
       }
+    for (const url of Object.values(draft?.webTemplate?.media ?? {})) {
+      const match = /^\/api\/assets\/([0-9a-f-]{36})\/file(?:\?.*)?$/i.exec(url);
+      if (match) ids.add(match[1]);
+    }
     return [...ids];
   }, [draft]);
   async function login(form: FormData) {
@@ -199,17 +221,21 @@ export function Dashboard() {
     setDraft(structuredClone(item.document ?? initialDoc(item.name)));
     setActiveScreen(item.document?.screens[0]?.id ?? "home");
     setActiveElement(null);
+    setWebSelection(null);
+    setShellTarget(null);
     setPreview(false);
   }
   async function create() {
     const name = prompt("Name your visualisation");
     if (!name?.trim()) return;
+    const templates = await fetch("/api/templates").then(r => r.json());
+    const base = templates.templates?.find((item: { isSystem: boolean; document: VisualisationDocument }) => item.isSystem)?.document;
     const r = await fetch("/api/visualisations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: name.trim(),
-        document: initialDoc(name.trim()),
+        document: base ? createCanvasDocument(base, name.trim()) : undefined,
       }),
     });
     const d = await r.json();
@@ -221,30 +247,17 @@ export function Dashboard() {
     setNotice("Draft created");
   }
   async function save() {
-    if (!selected || !draft) return;
+    if (!selected || !draft || selected.isProtected) return false;
     setSaving(true);
-    const r = await fetch(`/api/visualisations/${selected.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: selected.name,
-        revision: selected.revision,
-        document: draft,
-      }),
-    });
-    const d = await r.json();
-    setSaving(false);
-    if (!r.ok) {
-      setNotice(d.error || "Could not save");
-      return;
-    }
-    setSelected({
-      ...selected,
-      revision: d.revision,
-      updatedAt: new Date().toISOString(),
-    });
-    setNotice("All changes saved");
-    await reload();
+    try {
+      const r=await fetch(`/api/visualisations/${selected.id}`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:selected.name,revision:selected.revision,document:draft})});
+      const d=await r.json();
+      if(!r.ok){setNotice(d.error||"Could not save");return false;}
+      setSelected({...selected,revision:d.revision,updatedAt:new Date().toISOString()});
+      setNotice("All changes saved");await reload();return true;
+    } catch {
+      setNotice("Could not save. Check the connection and try again.");return false;
+    } finally {setSaving(false);}
   }
   async function publish() {
     if (!selected || selected.isProtected) return;
@@ -254,10 +267,12 @@ export function Dashboard() {
       )
     )
       return;
+    if (!(await save())) return;
     const r = await fetch(`/api/visualisations/${selected.id}/publish`, {
       method: "POST",
     });
     const d = await r.json();
+    if (r.ok) setSelected(current => current ? { ...current, latestPublishedVersion: d.version } : current);
     setNotice(
       r.ok ? `Published version ${d.version}` : d.error || "Publish failed",
     );
@@ -274,7 +289,7 @@ export function Dashboard() {
     }
     const name = prompt("Name your visualisation", "New visualisation");
     if (!name?.trim()) return;
-    const document = { ...template.document, name: name.trim() };
+    const document = createCanvasDocument(template.document, name.trim());
     const r = await fetch("/api/visualisations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -294,7 +309,7 @@ export function Dashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: `${item.name} (copy)`,
-        document: item.document,
+        document: item.document?.webTemplate ? { ...item.document, name: `${item.name} (copy)`, webPublication: undefined, experience:item.document.experience?{...item.document.experience,defaultPublished:false}:undefined } : item.document,
       }),
     });
     const d = await r.json();
@@ -326,25 +341,29 @@ export function Dashboard() {
     await reload();
     setNotice("Visualisation deleted");
   }
-  function updateElement(id: string, changes: Partial<CanvasElement>) {
-    setDraft(
-      (d) =>
-        d && {
-          ...d,
-          screens: d.screens.map((s) =>
-            s.id === activeScreen
-              ? {
-                  ...s,
-                  elements: s.elements.map((e) =>
-                    e.id === id ? { ...e, ...changes } : e,
-                  ),
-                }
-              : s,
-          ),
-        },
-    );
+  function updateElement(id: string, changes: Partial<CanvasElement>, screenId = activeScreen) {
+    setDraft(d => d && {...d,webPublication:undefined,screens:d.screens.map(s=>s.id===screenId?{...s,elements:s.elements.map(el=>el.id===id?(d.webTemplate?.contentMode==="canvas"?fitElement({...el,...changes},s.mode==="embedded"?1080:1920):{...el,...changes}):el)}:s)});
+  }
+  function removeElement(id: string, screenId = activeScreen) {
+    setDraft(d=>d&&({...d,webPublication:undefined,screens:d.screens.map(s=>s.id===screenId?{...s,elements:s.elements.filter(el=>el.id!==id||el.locked)}:s)}));
+    setActiveElement(null);
+  }
+  function chooseShell(id: string) {
+    if(shellTarget===id&&webSelection)return;
+    setActiveElement(null);setWebSelection(null);setActiveScreen(screens[0]?.id??"home");setShellTarget(id);
+  }
+  function shellLayers(region: string) {
+    return <><div className="panel-heading layers-title">{region}</div><div className="layer-list shell-layers">{shellElements.filter(item=>item.region===region).map(item=><button type="button" key={item.id} className={shellTarget===item.id?"active":""} onClick={()=>chooseShell(item.id)}>{item.label}</button>)}</div></>;
   }
   function pickMedia(asset: MediaAsset) {
+    if (selectingWebMedia && webSelection && draft?.webTemplate) {
+      setDraft({ ...draft, webPublication: undefined, webTemplate: { ...draft.webTemplate, media: { ...draft.webTemplate.media, [webSelection.selector]: asset.url } } });
+      setWebSelection({ ...webSelection, src: asset.url });
+      setSelectingWebMedia(false);
+      setTab("visualisations");
+      setNotice("Media selected. Save the draft to keep it.");
+      return;
+    }
     if (!selectingForElement) return;
     updateElement(selectingForElement, {
       src: asset.url,
@@ -352,35 +371,23 @@ export function Dashboard() {
     });
     setSelectingForElement(null);
     setTab("visualisations");
-    setNotice("Image selected. Save the draft to keep it.");
+    setNotice("Media selected. Save the draft to keep it.");
   }
-  function addElement(type: CanvasElement["type"]) {
-    if (!screen) return;
-    const offset = screen.elements.length * 28;
-    const el: CanvasElement = {
-      id: crypto.randomUUID(),
-      type,
-      x: 72 + (offset % 200),
-      y: 180 + offset,
-      width: type === "text" ? 650 : 340,
-      height: type === "text" ? 100 : 160,
-      text: type === "text" ? "New text" : "",
-      title: type === "card" ? "New card" : undefined,
-      description: type === "card" ? "Add a description" : undefined,
-      color: "#17366f",
-      fontSize: 36,
-      background: type === "card" ? "#f2f2f2" : undefined,
-    };
-    setDraft(
-      (d) =>
-        d && {
-          ...d,
-          screens: d.screens.map((s) =>
-            s.id === activeScreen ? { ...s, elements: [...s.elements, el] } : s,
-          ),
-        },
-    );
-    setActiveElement(el.id);
+  function updateWebOverride(field: keyof import("@/types/content").WebElementOverride, value: string | number, selector = webSelection?.selector) {
+    if (!draft?.webTemplate || !webSelection || !selector) return;
+    const current = draft.webTemplate.overrides[selector] ?? {};
+    const next = { ...current, [field]: value };
+    setDraft({ ...draft, webPublication: undefined, webTemplate: { ...draft.webTemplate, overrides: { ...draft.webTemplate.overrides, [selector]: next } } });
+    if (selector === webSelection.selector) setWebSelection({ ...webSelection, [field]: value });
+  }
+  function addElement(type: CanvasElement["type"], x?: number, y?: number, screenId = activeScreen) {
+    const target=screens.find(s=>s.id===screenId);if(!target)return;
+    const offset=target.elements.length*28;
+    const el=fitElement({id:crypto.randomUUID(),type,x:x??72+(offset%200),y:y??72+(offset%600),width:type==="text"?650:340,height:type==="text"?100:160,
+      text:type==="text"?"New text":type==="button"?"Button":"",title:type==="card"?"New card":undefined,description:type==="card"?"Add a description":undefined,
+      color:type==="button"?"#ffffff":"#17366f",fontSize:36,background:type==="card"?"#f2f2f2":type==="button"?"#033778":undefined},target.mode==="embedded"?1080:1920);
+    setDraft(d=>d&&({...d,webPublication:undefined,screens:d.screens.map(s=>s.id===screenId?{...s,elements:[...s.elements,el]}:s)}));
+    setActiveScreen(screenId);setActiveElement(el.id);setWebSelection(null);setShellTarget(null);
   }
   function reorder(id: string, delta: number) {
     if (!screen) return;
@@ -702,8 +709,8 @@ export function Dashboard() {
                   <h2>ERNI base template</h2>
                   <p>
                     The current Swiss Tech Center layout, ready for your next
-                    visualisation. The header, hero and footer are locked by
-                    default; the centre canvas is yours to edit.
+                    visualisation. The header, hero and footer can be customised.
+                    Start with an empty centre canvas and add your content.
                   </p>
                   <div className="template-stats">
                     <span>
@@ -738,7 +745,8 @@ export function Dashboard() {
           )}
           {tab === "media" && (
             <MediaLibrary
-              selecting={Boolean(selectingForElement)}
+              selecting={Boolean(selectingForElement || selectingWebMedia)}
+              mediaType={selectingWebMedia && webSelection?.tag === "video" ? "video" : draft?.screens.flatMap(screen => screen.elements).find(element => element.id === selectingForElement)?.type === "video" ? "video" : "image"}
               protectedAssetIds={protectedAssetIds}
               onPick={pickMedia}
             />
@@ -775,7 +783,6 @@ export function Dashboard() {
                 <button
                   className="outline-button"
                   onClick={() => {
-                    setPreviewScreenId(null);
                     setPreview((value) => !value);
                   }}
                 >
@@ -798,33 +805,35 @@ export function Dashboard() {
                   <IconSend size={16} />
                   Publish
                 </button>
+                {selected.latestPublishedVersion && <a className="outline-button export-link" href={`/api/visualisations/${selected.id}/export?version=${selected.latestPublishedVersion}`}>Export ZIP v{selected.latestPublishedVersion}</a>}
               </div>
               <div
-                className={"editor-layout" + (preview ? " preview-layout" : "")}
+                className={"editor-layout" + (preview ? " preview-layout" : "") + (draft.name === "Totem original" ? " totem-original-layout" : "") + (draft.webTemplate ? " web-template-layout" : "") + (isCanvas ? " canvas-template-layout" : "")}
               >
                 <aside className="editor-panel tools-panel">
                   <div className="panel-heading">ADD ELEMENT</div>
                   <div className="element-tools">
-                    <button onClick={() => addElement("text")}>
+                    <button aria-label="Add text" draggable onDragStart={e=>{e.dataTransfer.setData("application/x-totem-element","text");e.dataTransfer.effectAllowed="copy";}} onClick={() => addElement("text")}>
                       <span className="type-icon">T</span>Text
                     </button>
-                    <button onClick={() => addElement("image")}>
+                    <button aria-label="Add image" draggable onDragStart={e=>{e.dataTransfer.setData("application/x-totem-element","image");e.dataTransfer.effectAllowed="copy";}} onClick={() => addElement("image")}>
                       <IconPhoto />
                       Image
                     </button>
-                    <button onClick={() => addElement("video")}>
+                    <button aria-label="Add video" draggable onDragStart={e=>{e.dataTransfer.setData("application/x-totem-element","video");e.dataTransfer.effectAllowed="copy";}} onClick={() => addElement("video")}>
                       <span className="type-icon">▶</span>Video
                     </button>
-                    <button onClick={() => addElement("card")}>
+                    <button aria-label="Add card" draggable onDragStart={e=>{e.dataTransfer.setData("application/x-totem-element","card");e.dataTransfer.effectAllowed="copy";}} onClick={() => addElement("card")}>
                       <IconTemplate />
                       Card
                     </button>
-                    <button onClick={() => addElement("button")}>
+                    <button aria-label="Add button" draggable onDragStart={e=>{e.dataTransfer.setData("application/x-totem-element","button");e.dataTransfer.effectAllowed="copy";}} onClick={() => addElement("button")}>
                       <span className="type-icon">↗</span>Button
                     </button>
                   </div>
+                  {isCanvas && shellLayers("Cabecera")}
                   <div className="panel-heading layers-title">
-                    <IconLayersIntersect size={16} /> LAYERS{" "}
+                    <IconLayersIntersect size={16} /> {isCanvas ? "Contenido" : "LAYERS"}{" "}
                     <button
                       title="Add screen"
                       onClick={() => {
@@ -848,11 +857,12 @@ export function Dashboard() {
                       .map((el) => (
                         <div
                           key={el.id}
+                          data-layer-id={el.id}
                           className={`layer-row ${activeElement === el.id ? "active" : ""}`}
                         >
                           <button
                             className="layer-name"
-                            onClick={() => setActiveElement(el.id)}
+                            onClick={() => {setActiveElement(el.id);setWebSelection(null);setShellTarget(null);}}
                           >
                             <span className="layer-symbol">
                               {el.type === "text"
@@ -879,6 +889,7 @@ export function Dashboard() {
                         </div>
                       ))}
                   </div>
+                  {isCanvas && shellLayers("Pie")}
                   <p className="panel-hint">
                     Locked items cannot be moved, changed or deleted until you
                     unlock them.
@@ -895,6 +906,7 @@ export function Dashboard() {
                           onClick={() => {
                             setActiveScreen(s.id);
                             setActiveElement(null);
+                            setWebSelection(null);setShellTarget(null);
                           }}
                           className={activeScreen === s.id ? "active" : ""}
                         >
@@ -912,9 +924,17 @@ export function Dashboard() {
                   {preview ? (
                     <TotemPreview
                       document={draft}
-                      screenId={previewScreenId}
-                      onNavigate={setPreviewScreenId}
+                      visualisationId={selected.id}
                     />
+                  ) : draft.webTemplate || draft.experience?.id === "totem-original" || draft.name === "Totem original" ? (
+                    <div className="totem-preview-stage">
+                      <TotemOriginalExperience visualisationId={selected.id} document={draft} editing={!selected.isProtected}
+                        activeScreen={activeScreen} activeElement={activeElement} shellTarget={shellTarget}
+                        onSelect={element=>{setWebSelection(element);setActiveElement(null);setShellTarget(/data-totem-shell="([^"]+)"/.exec(element.selector)?.[1]??null);}}
+                        onCanvasSelect={(id,screenId)=>{setActiveElement(id);setActiveScreen(screenId);setWebSelection(null);setShellTarget(null);}}
+                        onCanvasChange={updateElement} onCanvasAdd={addElement} onCanvasDelete={removeElement}
+                        onScreenChange={screenId=>{setActiveScreen(screenId);setActiveElement(null);}} />
+                    </div>
                   ) : (
                     <div
                       className={`canvas-viewport ${screen?.mode === "embedded" ? "embedded-view" : "full-view"}`}
@@ -980,7 +1000,7 @@ export function Dashboard() {
                                 <span>▧ Choose an image in properties</span>
                               )
                             ) : el.type === "video" ? (
-                              <span>▶ Video placeholder</span>
+                              el.src ? <video src={el.src} muted playsInline preload="metadata"/> : <span>▶ Choose a video in properties</span>
                             ) : (
                               el.text || el.title || "Button"
                             )}
@@ -1076,41 +1096,74 @@ export function Dashboard() {
                   <p className="canvas-tip">
                     {preview
                       ? "Full kiosk preview. Click a linked card to open its screen, then use Back."
-                      : "Select a layer to edit it. Drag to reposition. Press Delete to remove the selected element."}
+                      : draft.webTemplate || draft.experience?.id === "totem-original" || draft.name === "Totem original"
+                        ? selected.isProtected ? "Vista interactiva del proyecto web original." : isCanvas ? "Arrastra elementos al centro. Selecciona la cabecera o el pie desde la vista o sus capas para editarlos." : "Selecciona texto, iconos, tarjetas o medios dentro de la página y edita sus propiedades."
+                        : "Select a layer to edit it. Drag to reposition. Press Delete to remove the selected element."}
                   </p>
                 </div>
                 <aside className="editor-panel props-panel">
                   <div className="panel-heading">PROPERTIES</div>
-                  {chosen ? (
+                  {draft.webTemplate && webSelection && !preview && !selected.isProtected ? (
+                    <>
+                      <span className="property-type">WEB ELEMENT · {webSelection.tag.toUpperCase()}</span>
+                      <small className="web-element-selector">{isCanvas ? shellElements.find(item=>shellSelector(item.id)===webSelection.selector)?.label : webSelection.selector}</small>
+                      {(webSelection.textEditable ?? !!webSelection.text) ? <label>Text<textarea aria-label="Text" value={draft.webTemplate.overrides[webSelection.selector]?.text ?? webSelection.text} onChange={e => updateWebOverride("text", e.target.value)}/></label> : /^(img|video|source|svg)$/.test(webSelection.tag) ? null : <small className="web-element-hint">Este elemento contiene otros elementos. Edita sus textos aquí o selecciona un texto directamente en la vista.</small>}
+                      {!isCanvas && !!webSelection.textItems?.length && <div className="web-text-items"><strong>Textos dentro de este elemento</strong>{webSelection.textItems.map(item => <label key={item.selector}><span>{item.text}</span><input aria-label={`Editar ${item.text}`} value={draft.webTemplate!.overrides[item.selector]?.text ?? item.text} onChange={e=>updateWebOverride("text",e.target.value,item.selector)}/></label>)}</div>}
+                      {/(img|video|source|svg)/.test(webSelection.tag) && <>{!isCanvas && <label>Media path<input value={draft.webTemplate.media?.[webSelection.selector] ?? webSelection.src} onChange={e => { const media={...draft.webTemplate!.media,[webSelection.selector]:e.target.value}; setDraft({...draft,webPublication:undefined,webTemplate:{...draft.webTemplate!,media}}); }}/></label>}<button className="outline-button" onClick={()=>{setSelectingWebMedia(true);setTab("media");}}><IconPhoto size={16}/>Choose media from library</button></>}
+                      <div className="field-grid">
+                        {(["x","y","width","height"] as const).map(field => <label key={field}>{field.toUpperCase()}<input type="number" value={draft.webTemplate!.overrides[webSelection.selector]?.[field] ?? webSelection[field]} onChange={e=>updateWebOverride(field,Number(e.target.value))}/></label>)}
+                      </div>
+                    </>
+                  ) : chosen ? (
                     <>
                       <span className="property-type">
                         {chosen.type.toUpperCase()} ELEMENT
                       </span>
                       <label>
-                        Layer name
-                        <input
-                          value={chosen.title || chosen.text || chosen.type}
-                          onChange={(e) =>
-                            updateElement(
-                              chosen.id,
-                              chosen.type === "card"
-                                ? { title: e.target.value }
-                                : { text: e.target.value },
-                            )
-                          }
-                        />
+                        {chosen.type === "text" ? "Text content" : "Layer name"}
+                        {chosen.type === "text" ? <textarea aria-label="Text content" value={chosen.text||""} onChange={e=>updateElement(chosen.id,{text:e.target.value})}/> : <input value={chosen.title||chosen.text||chosen.type} onChange={e=>updateElement(chosen.id,chosen.type==="card"?{title:e.target.value}:{text:e.target.value})}/>}
                       </label>
                       {chosen.type === "image" && (
-                        <button
-                          className="outline-button"
-                          onClick={() => {
-                            setSelectingForElement(chosen.id);
-                            setTab("media");
-                          }}
-                        >
-                          <IconPhoto size={16} />
-                          Choose from media library
-                        </button>
+                        <>
+                          <button
+                            className="outline-button"
+                            onClick={() => {
+                              setSelectingForElement(chosen.id);
+                              setTab("media");
+                            }}
+                          >
+                            <IconPhoto size={16} />
+                            Choose from media library
+                          </button>
+                          <label>
+                            Template image
+                            <select aria-label="Template image"
+                              value={templateImages.find((asset) => chosen.src === templateMediaUrl(asset.file))?.file || (chosen.src ? "__current" : "")}
+                              onChange={(event) => {
+                                if (event.target.value !== "__current") updateElement(chosen.id, { src: event.target.value ? templateMediaUrl(event.target.value) : undefined });
+                              }}
+                            >
+                              <option value="">Choose a template image</option>
+                              {chosen.src && <option value="__current">Keep current image source</option>}
+                              {templateImages.map((asset) => <option key={asset.file} value={asset.file}>{asset.label}</option>)}
+                            </select>
+                          </label>
+                        </>
+                      )}
+                      {chosen.type === "video" && (
+                        <><button className="outline-button" onClick={() => {setSelectingForElement(chosen.id);setTab("media");}}>Choose from media library</button><label>
+                          Template video
+                          <select aria-label="Template video"
+                            value={templateVideos.find((asset) => chosen.src === templateMediaUrl(asset.file))?.file || (chosen.src ? "__current" : "")}
+                            onChange={(event) => {
+                              if (event.target.value !== "__current") updateElement(chosen.id, { src: event.target.value ? templateMediaUrl(event.target.value) : undefined });
+                            }}
+                          >
+                            <option value="">Choose a template video</option>
+                            {chosen.src && <option value="__current">Keep current video source</option>}
+                            {templateVideos.map((asset) => <option key={asset.file} value={asset.file}>{asset.label}</option>)}
+                          </select>
+                        </label></>
                       )}
                       <div className="field-grid">
                         <label>
@@ -1162,7 +1215,7 @@ export function Dashboard() {
                           />
                         </label>
                       </div>
-                      {chosen.type === "card" && (
+                      {(chosen.type === "card" || chosen.type === "button") && (
                         <>
                           <label>
                             Description
@@ -1177,7 +1230,7 @@ export function Dashboard() {
                           </label>
                           <label>
                             Link to screen
-                            <select
+                            <select aria-label="Link to screen"
                               value={chosen.target || ""}
                               onChange={(e) =>
                                 updateElement(chosen.id, {
@@ -1198,7 +1251,7 @@ export function Dashboard() {
                       {chosen.type === "image" && (
                         <label>
                           Image margins
-                          <select
+                          <select aria-label="Image margins"
                             value={chosen.imageNoPadding ? "none" : "default"}
                             onChange={(e) =>
                               updateElement(chosen.id, {

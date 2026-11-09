@@ -1,5 +1,7 @@
+import { ZodError } from "zod";
 import { NextResponse } from "next/server";
 export function apiError(error: unknown) {
+  if(error instanceof ZodError)return NextResponse.json({error:"Invalid request.",issues:error.issues.map(({path,message})=>({path,message}))},{status:400});
   const message = error instanceof Error ? error.message : "Unexpected server error";
   const status = message.includes("not configured") ? 503 : 500;
   if (status === 500) console.error("API request failed", error);

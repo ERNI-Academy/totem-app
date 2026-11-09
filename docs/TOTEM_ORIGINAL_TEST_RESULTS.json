@@ -1,0 +1,11 @@
+{
+  "sourceSha256": "28cc06e054400067344c4e79aba6f34daf42d8e50bd83bc0a6a363a3d237d69d",
+  "webSha256": "4b86ebf6b9b8b015992d1933028b7a4de5e9b747dfa9473ec049012d3df1466b",
+  "packSha256": "4b6909389320d3d2bac710214852775ad03595c35d12cabcfd66245ca447f524",
+  "passed": 5,
+  "failed": 0,
+  "skipped": 0,
+  "animationFramesCompared": 0,
+  "maximumDifferentPixelFraction": null,
+  "durationMs": 4778.354
+}

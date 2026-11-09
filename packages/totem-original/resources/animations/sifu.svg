@@ -1,0 +1,23 @@
+<svg class="scene" viewBox="0 0 1080 860">
+  <defs><pattern id="g4" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M54 0H0V54" fill="none" stroke="#0f2a4d"/></pattern></defs>
+  <rect width="1080" height="860" fill="url(#g4)"/>
+  <text x="48" y="74" class="st2" font-size="22" fill="#7f9bbd" letter-spacing="3">EYE-CONTROLLED PIANO · LIVE</text>
+  <text id="s-status" x="48" y="116" class="st2" font-size="34" font-weight="600" fill="#00BEF4">Listening</text>
+  <!-- eye -->
+  <path d="M130 215 Q210 150 290 215 Q210 280 130 215 Z" fill="#E8ECF1"/>
+  <circle id="s-iris" cx="210" cy="215" r="26" fill="#1f5fa8"/><circle id="s-pupil" cx="210" cy="215" r="11" fill="#00122C"/>
+  <!-- eye-tracking ring -->
+  <g id="s-ring"></g>
+  <circle id="s-gaze" r="16" fill="none" stroke="#fff" stroke-width="4"/>
+  <text x="225" y="690" text-anchor="middle" class="st2" font-size="24" font-weight="600" fill="#7f9bbd" letter-spacing="2">EYE-TRACKING INSTRUMENT</text>
+  <g id="s-pred"><rect x="65" y="720" width="320" height="56" fill="#00BEF4"/>
+    <text id="s-predt" x="225" y="757" text-anchor="middle" class="st2" font-size="26" font-weight="700" fill="#00122C">AI predicts: E</text></g>
+  <!-- robot stand + piano -->
+  <rect x="696" y="300" width="48" height="320" fill="#E8ECF1" stroke="#9fb0c4" stroke-width="3"/>
+  <rect x="680" y="290" width="80" height="22" rx="6" fill="#dfe5ec" stroke="#9fb0c4" stroke-width="3"/>
+  <rect x="400" y="590" width="640" height="24" fill="#00102a"/>
+  <g id="s-keys"></g>
+  <g id="s-notes" class="st2" font-size="48" fill="#00BEF4"></g>
+  <g id="s-arm"></g>
+  <text x="720" y="820" text-anchor="middle" class="st2" font-size="24" font-weight="600" fill="#7f9bbd" letter-spacing="2">ROBOT PLAYS THE REAL PIANO</text>
+</svg>

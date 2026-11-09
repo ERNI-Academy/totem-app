@@ -19,7 +19,7 @@ android {
         versionCode = versionProperties.getProperty("versionCode").toInt()
     }
 
-    sourceSets["main"].assets.srcDirs("../../totem-web")
+    sourceSets["main"].assets.srcDirs("../../packages/totem-original/dist/android")
 
     buildTypes {
         release {
@@ -34,6 +34,19 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 }
+
+val bundleTotemOriginal by tasks.registering(Exec::class) {
+    workingDir(rootProject.projectDir.parentFile)
+    commandLine("npm", "run", "build:totem-apk")
+    inputs.dir(rootProject.file("../packages/totem-original/web"))
+    inputs.dir(rootProject.file("../packages/totem-original/resources"))
+    inputs.file(rootProject.file("../scripts/build-totem-apk.mjs"))
+    inputs.file(rootProject.file("../scripts/verify-totem-resources.mjs"))
+    inputs.file(rootProject.file("../packages/totem-original/manifest.json"))
+    inputs.file(rootProject.file("../packages/totem-original/document.json"))
+    outputs.dir(rootProject.file("../packages/totem-original/dist/android"))
+}
+tasks.named("preBuild") { dependsOn(bundleTotemOriginal) }
 
 dependencies {
     implementation("androidx.core:core-ktx:1.17.0")

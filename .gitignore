@@ -36,3 +36,10 @@ pnpm-debug.log*
 *.log
 Thumbs.db
 Desktop.ini
+
+# Generated offline runtime and browser verification artifacts
+packages/totem-original/dist/
+playwright-report/
+test-results/
+# Media bytes are materialized from the existing checked-in totem-web/media.
+packages/totem-original/resources/media/

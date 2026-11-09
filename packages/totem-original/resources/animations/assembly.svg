@@ -1,0 +1,38 @@
+<svg class="scene" viewBox="0 0 1080 860">
+  <defs><pattern id="g1" width="54" height="54" patternUnits="userSpaceOnUse"><path d="M54 0H0V54" fill="none" stroke="#0f2a4d"/></pattern></defs>
+  <rect width="1080" height="860" fill="url(#g1)"/>
+  <g transform="translate(-135,-205) scale(1.25)">
+  <rect x="-100" y="640" width="1300" height="44" fill="#0d2c57"/>
+  <g id="a-belt" stroke="#1f5fa8" stroke-width="4"></g>
+  <rect x="-100" y="684" width="1300" height="300" fill="#00102a"/>
+  <rect x="-100" y="800" width="1300" height="12" fill="#22426e"/>
+  <g id="a-ties" fill="#1a3a66"></g>
+  <g id="a-car">
+    <path d="M0 120 L0 86 Q4 70 40 64 L112 54 L162 12 Q172 3 192 3 L298 3 Q320 3 336 16 L382 54 L424 62 Q440 66 440 86 L440 120 Z" fill="#1b3f73" stroke="#5bc3e6" stroke-width="3"/>
+    <path d="M128 54 L170 18 L230 18 L230 54 Z M244 54 L244 18 L300 18 Q312 18 322 28 L352 54 Z" fill="#0d2c57" stroke="#5bc3e6" stroke-width="2"/>
+    <rect x="185" y="62" width="90" height="56" fill="none" stroke="#5bc3e6" stroke-width="2" stroke-dasharray="6 6"/>
+    <rect id="a-panel-on" x="185" y="62" width="90" height="56" fill="#5bc3e6" opacity="0"/>
+    <circle cx="96" cy="124" r="31" fill="#00122C" stroke="#9fb4cc" stroke-width="5"/><circle cx="96" cy="124" r="10" fill="#9fb4cc"/>
+    <circle cx="344" cy="124" r="31" fill="#00122C" stroke="#9fb4cc" stroke-width="5"/><circle cx="344" cy="124" r="10" fill="#9fb4cc"/>
+    <g id="a-box" opacity="0">
+      <path d="M-16 -16 h40 M-16 -16 v40 M456 -16 h-40 M456 -16 v40 M-16 172 h40 M-16 172 v-40 M456 172 h-40 M456 172 v-40" stroke="#00BEF4" stroke-width="5" fill="none"/>
+      <rect x="-16" y="-58" width="236" height="38" fill="#00BEF4"/>
+      <text x="-4" y="-31" class="st2" font-size="22" font-weight="600" fill="#00122C" letter-spacing="2">VEHICLE · TRACKED</text>
+    </g>
+    <g id="a-cross" opacity="0">
+      <circle cx="230" cy="90" r="36" fill="none" stroke="#fff" stroke-width="3"/>
+      <path d="M230 44 v22 M230 114 v22 M184 90 h22 M254 90 h22" stroke="#fff" stroke-width="3"/>
+    </g>
+  </g>
+  <polygon id="a-cone" fill="#00BEF4" opacity="0"/>
+  <g id="a-base">
+    <rect x="-64" y="782" width="128" height="26" fill="#9fb0c4"/>
+    <rect x="-30" y="600" width="60" height="184" fill="#E8ECF1" stroke="#9fb0c4" stroke-width="3"/>
+    <rect x="-38" y="590" width="76" height="22" rx="6" fill="#dfe5ec" stroke="#9fb0c4" stroke-width="3"/>
+  </g>
+  <g id="a-arm"></g>
+  <rect id="a-panel-tool" width="90" height="56" fill="#5bc3e6"/>
+  </g>
+  <text x="48" y="74" class="st2" font-size="22" fill="#7f9bbd" letter-spacing="3">COBOT WITH INTEGRATED VISION · LIVE</text>
+  <text id="a-status" x="48" y="116" class="st2" font-size="34" font-weight="600" fill="#00BEF4">Waiting for vehicle</text>
+</svg>

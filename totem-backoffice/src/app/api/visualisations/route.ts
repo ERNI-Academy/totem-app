@@ -1,3 +1,7 @@
+import { documentSchema } from "@/lib/contentSchema";
+import { createCanvasDocument } from "@/lib/canvasDocument";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -7,10 +11,8 @@ import { apiError } from "@/lib/http";
 import { syncDraftAssetReferences } from "@/lib/assetReferences";
 import type { VisualisationDocument } from "@/types/content";
 export const runtime = "nodejs";
-const element = z.object({ id:z.string().min(1),type:z.enum(["text","image","video","card","button"]),x:z.number().finite(),y:z.number().finite(),width:z.number().positive().max(1080),height:z.number().positive().max(1920),text:z.string().max(5000).optional(),title:z.string().max(240).optional(),description:z.string().max(2000).optional(),color:z.string().max(32).optional(),fontSize:z.number().positive().max(240).optional(),background:z.string().max(64).optional(),src:z.string().max(1_500_000).optional(),target:z.string().max(120).optional(),locked:z.boolean().optional(),imageNoPadding:z.boolean().optional() });
-const documentSchema=z.object({schemaVersion:z.literal(1),width:z.literal(1080),height:z.literal(1920),name:z.string().max(160),regions:z.record(z.string(),z.object({x:z.number(),y:z.number(),width:z.number(),height:z.number(),locked:z.boolean()})).optional(),screens:z.array(z.object({id:z.string().min(1),name:z.string().min(1).max(160),mode:z.enum(["embedded","fullscreen"]),elements:z.array(element).max(250)})).min(1).max(40)});
 const createSchema=z.object({name:z.string().trim().min(2).max(160),document:documentSchema.optional()});
-const blank=(name:string)=>({schemaVersion:1 as const,width:1080 as const,height:1920 as const,name,screens:[{id:"home",name:"Inicio",mode:"embedded" as const,elements:[]}]});
+
 export async function GET() {
   try {
     const auth=await requireUser(); if(auth.error)return auth.error;
@@ -23,7 +25,7 @@ export async function GET() {
 export async function POST(request:Request) {
   try {
     const auth=await requireUser(); if(auth.error)return auth.error;
-    const body=createSchema.parse(await request.json()); const id=randomUUID(); const doc=body.document??blank(body.name);
+    const body=createSchema.parse(await request.json()); const id=randomUUID(); const doc=body.document??createCanvasDocument(JSON.parse(await readFile(path.resolve(process.cwd(),"..","packages/totem-original/document.json"),"utf8")),body.name);
     const document={...doc,name:body.name};
     const conflict=await withTransaction(async(client)=>{
       const duplicate=await client.query("SELECT 1 FROM visualisations WHERE is_deleted=false AND upper(name)=upper($1) LIMIT 1",[body.name]);

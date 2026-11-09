@@ -59,3 +59,11 @@ La guía SQL Server anterior está archivada como referencia histórica en `../d
 - No antepongas `NEXT_PUBLIC_` a secretos.
 - `.env.local`, `.env.production`, respaldos SQL y claves de firma no deben subirse a Git.
 - Los blobs existentes permanecen en Azure Blob Storage. Los metadatos locales de la biblioteca residen en PostgreSQL.
+
+## Totem original y recursos reutilizables
+
+El backoffice se ejecuta en React, pero cada plantilla web es un paquete HTML/CSS/JavaScript independiente. `Totem original` carga los archivos de `packages/totem-original/web`, copia byte por byte de `totem-web`. El preview y la exportación sirven ese paquete; las copias pueden añadir ajustes y medios locales mediante un adaptador JavaScript sin reconstruir la plantilla en React. `db:setup` instala el documento canónico y añade nuevas publicaciones sin reescribir el historial.
+
+`npm run totem:sync-blob` desde la raíz sincroniza el proyecto web original y los recursos reutilizables con `totem-media-dev` y `totem-media`. Registra las imágenes, iconos PNG y vídeos en la biblioteca. Las publicaciones se pueden descargar como ZIP y el preview ejecuta el mismo paquete autónomo; la APK predeterminada carga localmente el `index.html` original. Consulta la [auditoría](../docs/AUDITORIA_TOTEM_ORIGINAL.md).
+
+Las visualizaciones nuevas conservan la cabecera y el pie editables y empiezan con el centro vacío. Las copias completas mantienen el contenido y las interacciones de su origen. Consulta la [guía del lienzo central](../docs/EDITOR_CENTRAL_CANVAS.md) para los controles, la migración de `new` y las pruebas del editor.

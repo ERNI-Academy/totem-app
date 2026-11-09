@@ -1,0 +1,2 @@
+import {defineConfig} from '@playwright/test';
+export default defineConfig({testDir:'.',testMatch:'*.spec.mjs',timeout:60000,workers:1,reporter:[['list'],['json',{outputFile:'test-results/totem-results.json'}],['html',{outputFolder:'test-results/totem-report',open:'never'}]],use:{headless:true,viewport:{width:1080,height:1920},launchOptions:{args:['--no-sandbox','--enable-unsafe-swiftshader']},screenshot:'only-on-failure'},webServer:{command:'node tests/totem-original/server.mjs',cwd:process.cwd(),url:'http://127.0.0.1:4317/apk/',timeout:30000,reuseExistingServer:false}});

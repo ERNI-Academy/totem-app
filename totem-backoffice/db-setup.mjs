@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import pg from "pg";
+import { applyOriginalPublication } from "./db-original.mjs";
 
 const { Pool } = pg;
 const connectionString = process.env.DATABASE_URL;
@@ -12,6 +13,7 @@ try {
   await client.query("BEGIN");
   try {
     await client.query(schema);
+    await applyOriginalPublication(client);
     await client.query("COMMIT");
     console.log("PostgreSQL schema and Totem baseline are ready.");
   } catch (error) {

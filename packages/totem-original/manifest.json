@@ -1,0 +1,535 @@
+{
+  "packSha256": "4b6909389320d3d2bac710214852775ad03595c35d12cabcfd66245ca447f524",
+  "schemaVersion": 2,
+  "id": "totem-original",
+  "sourceSha256": "28cc06e054400067344c4e79aba6f34daf42d8e50bd83bc0a6a363a3d237d69d",
+  "webSha256": "4b86ebf6b9b8b015992d1933028b7a4de5e9b747dfa9473ec049012d3df1466b",
+  "renderer": "web",
+  "defaultPublished": true,
+  "webFiles": [
+    {
+      "path": "fonts/fonts.css",
+      "bytes": 463,
+      "sha256": "8215b44fdabeee966d01d1ccef20b2447a1a596f81642c17f06ff58a3c9e090b"
+    },
+    {
+      "path": "fonts/ssp-300.woff2",
+      "bytes": 14792,
+      "sha256": "46d6a0984aa795b764141232671160e61bdcc49e900de67ca6b35bae25b1ebdd"
+    },
+    {
+      "path": "fonts/ssp-400.woff2",
+      "bytes": 14868,
+      "sha256": "691491f1fc8badab623e1be56f92cc2d98c462b16617c67e1e288d6b061444bc"
+    },
+    {
+      "path": "fonts/ssp-600.woff2",
+      "bytes": 14876,
+      "sha256": "156650610835fe32914722ecfc8dab0ebbb84795e201b842158afa0ea873cfa4"
+    },
+    {
+      "path": "fonts/ssp-700.woff2",
+      "bytes": 14724,
+      "sha256": "06b675a649489d21b7fd33f19b1c6d37e8bd778ded07ecfec26bbc8f11e694f4"
+    },
+    {
+      "path": "index.html",
+      "bytes": 93973,
+      "sha256": "28cc06e054400067344c4e79aba6f34daf42d8e50bd83bc0a6a363a3d237d69d"
+    },
+    {
+      "path": "media/better-ask-erni.png",
+      "bytes": 21299,
+      "sha256": "e952bed3d789b491c9a739171ba02244517552725c3724e9195945eb7528af92"
+    },
+    {
+      "path": "media/erni-logo.png",
+      "bytes": 27800,
+      "sha256": "578409b3aed33917cfdaa2f365c55161fb44ec0f7bcd8e0ae1180d44c30c0ef4"
+    },
+    {
+      "path": "media/hero-poster.jpg",
+      "bytes": 32790,
+      "sha256": "b241253ff392cec1351660e6704bcef0fdf1e9f840b4441400edbf58ffe3299a"
+    },
+    {
+      "path": "media/hero.mp4",
+      "bytes": 4548329,
+      "sha256": "055a94ed3015295bd6c7642433398d1e5aeea94261dfe58070f713582e712063"
+    },
+    {
+      "path": "media/sifu-robot-piano.jpg",
+      "bytes": 189363,
+      "sha256": "dfa6cf907b2de9164ec9037b3ee4cb7e91f70f1d1692e86b1d3737784b34c418"
+    },
+    {
+      "path": "media/sifu.mp4",
+      "bytes": 26330880,
+      "sha256": "1dea57c0561125dbf8237c024d1e584fc5e05fb557edb05b9c73aafb9c1f1a7b"
+    },
+    {
+      "path": "media/talent-arena.mp4",
+      "bytes": 13644631,
+      "sha256": "2880ee35c7adb4a479543ada1ac0ffe0f4071b9b6a115379cc1fb4cd5d01af58"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2381,
+      "sha256": "6eed397c698e95e48279e1843b6403d4b597a3e70cc98d37f06203cf703573cb"
+    },
+    {
+      "path": "vendor/three.min.js",
+      "bytes": 669884,
+      "sha256": "170c6789f43217c96b3170f4b42fafe135de7f7cd48497a4218f9757ee1d49fa"
+    }
+  ],
+  "animationDurations": {
+    "assembly": 12,
+    "lab": 12,
+    "caricature": 13,
+    "sifu": 10.4,
+    "dpcr": 26
+  },
+  "resources": [
+    {
+      "path": "animations/assembly.svg",
+      "bytes": 2765,
+      "sha256": "0fcee87c2e08e9f172c51c82f0a1d809adc81fbf0408c63522bef1b0fb96d636"
+    },
+    {
+      "path": "animations/caricature.svg",
+      "bytes": 5454,
+      "sha256": "670c3743b3db7759a4158147dd831f6bdf9af7a1ed675632c38366c7260345e5"
+    },
+    {
+      "path": "animations/lab.svg",
+      "bytes": 2138,
+      "sha256": "12541eea54655aba59172fcbc98903b1de46116595fe16d9badb783275a97ebf"
+    },
+    {
+      "path": "animations/sifu.svg",
+      "bytes": 1767,
+      "sha256": "f0e8bacf88c1c5cc15712bb241b6974f1a93064e62b8ea996a074b0ebf831fb5"
+    },
+    {
+      "path": "fonts/fonts.css",
+      "bytes": 463,
+      "sha256": "8215b44fdabeee966d01d1ccef20b2447a1a596f81642c17f06ff58a3c9e090b"
+    },
+    {
+      "path": "fonts/ssp-300.woff2",
+      "bytes": 14792,
+      "sha256": "46d6a0984aa795b764141232671160e61bdcc49e900de67ca6b35bae25b1ebdd"
+    },
+    {
+      "path": "fonts/ssp-400.woff2",
+      "bytes": 14868,
+      "sha256": "691491f1fc8badab623e1be56f92cc2d98c462b16617c67e1e288d6b061444bc"
+    },
+    {
+      "path": "fonts/ssp-600.woff2",
+      "bytes": 14876,
+      "sha256": "156650610835fe32914722ecfc8dab0ebbb84795e201b842158afa0ea873cfa4"
+    },
+    {
+      "path": "fonts/ssp-700.woff2",
+      "bytes": 14724,
+      "sha256": "06b675a649489d21b7fd33f19b1c6d37e8bd778ded07ecfec26bbc8f11e694f4"
+    },
+    {
+      "path": "icons/ai-adopt-navy.png",
+      "bytes": 4690,
+      "sha256": "4fc470d0e23517c54619cd04a183c0881a33cf497b64465a27899fba8efd10e4"
+    },
+    {
+      "path": "icons/ai-adopt-navy.svg",
+      "bytes": 284,
+      "sha256": "d196be99c0a6b9db1fcdab0b44bb8059af28eb3595529d6b03ff2201353e8b6d"
+    },
+    {
+      "path": "icons/ai-adopt-white.png",
+      "bytes": 4210,
+      "sha256": "eff306c60e433e66a9115b4238a57c342939b85e4ae2aa1b9baab52d117b25df"
+    },
+    {
+      "path": "icons/ai-adopt-white.svg",
+      "bytes": 284,
+      "sha256": "fc69018f71870de8eaa5a9aeaddfcbfd6645491391b538584476ef5322a5e68b"
+    },
+    {
+      "path": "icons/ai-agent-navy.png",
+      "bytes": 12087,
+      "sha256": "7993bf7faa4ee972bda668e7561348255a2c26af1894b56645af633f4b569da9"
+    },
+    {
+      "path": "icons/ai-agent-navy.svg",
+      "bytes": 425,
+      "sha256": "b8d9304f8afa7eb389a0a44198aa2e4425e01304bdbde76cc55b6ac259df812a"
+    },
+    {
+      "path": "icons/ai-agent-white.png",
+      "bytes": 9276,
+      "sha256": "3dd2ec07914da3cccf49e74bce0e14f888cfcc5d07e5c7219ed54f4e5eb23834"
+    },
+    {
+      "path": "icons/ai-agent-white.svg",
+      "bytes": 425,
+      "sha256": "d20e84952cb7396c88ac2fabefef66abd3f85bf2ff929d3009e43ffcdf5c703b"
+    },
+    {
+      "path": "icons/ai-data-navy.png",
+      "bytes": 13249,
+      "sha256": "26b9b814439a4d63222cab935fe437a805ecd59db7e381395608da66e45eaab1"
+    },
+    {
+      "path": "icons/ai-data-navy.svg",
+      "bytes": 383,
+      "sha256": "c52550a0e6e424128122a4857ae50d4834e3c808e687226e691f81c7aac24efd"
+    },
+    {
+      "path": "icons/ai-data-white.png",
+      "bytes": 10096,
+      "sha256": "f4d43d4c14fb76d38986586b1f9a9b3721f652b5237054d711e097e0622d9c31"
+    },
+    {
+      "path": "icons/ai-data-white.svg",
+      "bytes": 383,
+      "sha256": "244a0c3f2cf95cafc97d240a7d7291b8cb76eb79cf198acb8fa5d3f470e3d609"
+    },
+    {
+      "path": "icons/ai-managed-navy.png",
+      "bytes": 12911,
+      "sha256": "f6ddf36cf5b7e1ba9aef316bf38f8ddf6d1474f42c77db7be3e4e242743fcef9"
+    },
+    {
+      "path": "icons/ai-managed-navy.svg",
+      "bytes": 292,
+      "sha256": "1184e7fa80f1365df2ff0fa87de2d2346a16399168a2c3b876b8dda4199b748c"
+    },
+    {
+      "path": "icons/ai-managed-white.png",
+      "bytes": 9709,
+      "sha256": "9fd3b8cc0b435bb1300f8124246312d16a3a25bc5f325009a63b21f86a44bf02"
+    },
+    {
+      "path": "icons/ai-managed-white.svg",
+      "bytes": 292,
+      "sha256": "5769e99050ccdccee7f1a605bc35ea820a4f7c35072840d70ea1b4fd3857e15e"
+    },
+    {
+      "path": "icons/ai-sdlc-navy.png",
+      "bytes": 3981,
+      "sha256": "eff7771a2c58731c9178ae42d69296c1821881e83b18bda1131d3aa99f72822a"
+    },
+    {
+      "path": "icons/ai-sdlc-navy.svg",
+      "bytes": 272,
+      "sha256": "e2649d34db184f41019131a7feb4933c76f14fc27d55e5f634684c4af36874a8"
+    },
+    {
+      "path": "icons/ai-sdlc-white.png",
+      "bytes": 3668,
+      "sha256": "b61fb89c445e87e4d8c1352de95f2d18f3e4a9d053a26e5e0330fbdaa223f4b9"
+    },
+    {
+      "path": "icons/ai-sdlc-white.svg",
+      "bytes": 272,
+      "sha256": "ffe5c754733af747c1f033113bd26dc5ad561b5adcd0fa8e8ff60e603e8315d7"
+    },
+    {
+      "path": "icons/demo-assembly-navy.png",
+      "bytes": 11020,
+      "sha256": "fa013e8b3d60dda39a294d2d1595a035d38c9bbba431e1ee6f4464a3abfc38e8"
+    },
+    {
+      "path": "icons/demo-assembly-navy.svg",
+      "bytes": 565,
+      "sha256": "c14c35bf4661b85b3d044dfc248e3ee1475e7a11431c10976be7bf8c80e6b439"
+    },
+    {
+      "path": "icons/demo-assembly-white.png",
+      "bytes": 9498,
+      "sha256": "b43fc2d1d212a4fdc6510f201023c4a3442640d6972a62a771caaf2b2710aeeb"
+    },
+    {
+      "path": "icons/demo-assembly-white.svg",
+      "bytes": 565,
+      "sha256": "0fdedb24b1bce96763c8c10206029c00085f4b9fef072e02986a23db7b4e9b56"
+    },
+    {
+      "path": "icons/demo-caricature-navy.png",
+      "bytes": 13752,
+      "sha256": "71902fc9ac16ebf3f7d9ddbcdea8fb80328295a1f6661221767515d7886ccb58"
+    },
+    {
+      "path": "icons/demo-caricature-navy.svg",
+      "bytes": 460,
+      "sha256": "6ce2f45985a98a94ab28674ddd8f746501083d0ef4d7c5c2607bb4cdc1d57923"
+    },
+    {
+      "path": "icons/demo-caricature-white.png",
+      "bytes": 11541,
+      "sha256": "6eb0738a6b413c9b65a98e1819c5055dcd5a663154cdc0bfbfde525e3781d857"
+    },
+    {
+      "path": "icons/demo-caricature-white.svg",
+      "bytes": 460,
+      "sha256": "a216fdb5b0a3d26e796b87e8bf9b42916373342f2d87e499c90661cfa5eaad21"
+    },
+    {
+      "path": "icons/demo-dpcr-navy.png",
+      "bytes": 9507,
+      "sha256": "45cef5f62e964568c005dbf5d0396987f94b1c404ad7c6e504b5cb3e2fbfa5de"
+    },
+    {
+      "path": "icons/demo-dpcr-navy.svg",
+      "bytes": 447,
+      "sha256": "d2250c2e6a5eb2e09775531613730c71bea6ce91de8404b622744fcc9067f384"
+    },
+    {
+      "path": "icons/demo-dpcr-white.png",
+      "bytes": 8327,
+      "sha256": "410d605cf2e3ce241653c47ef68bf4cf533f938feb008b8212ec7f988658fd2b"
+    },
+    {
+      "path": "icons/demo-dpcr-white.svg",
+      "bytes": 447,
+      "sha256": "43518ac2060681fa15f7b22efa84ba66615b7b2314f6d3fc70f56e92869b9d7d"
+    },
+    {
+      "path": "icons/demo-lab-navy.png",
+      "bytes": 8635,
+      "sha256": "dbc1aaceca09ce573c04421eb1c41d7666b8035835c2dfcd93f0ab0b98534c8f"
+    },
+    {
+      "path": "icons/demo-lab-navy.svg",
+      "bytes": 460,
+      "sha256": "7226ba2cda0aff184d2ac4ef0c1243b9ec1cc6703589ee04a0b6952cf9bbb81a"
+    },
+    {
+      "path": "icons/demo-lab-white.png",
+      "bytes": 7840,
+      "sha256": "6536a66acac3fcb480dff19df0f1a33828b0fbded3dfafb538b2d43f9a6398cf"
+    },
+    {
+      "path": "icons/demo-lab-white.svg",
+      "bytes": 460,
+      "sha256": "e1c7a34880557a16a663e09881382f87f371d68983f221c0950801455cc911a3"
+    },
+    {
+      "path": "icons/demo-sifu-navy.png",
+      "bytes": 13161,
+      "sha256": "eb825d996cc24bcad888b8c063ab695c893577b06413cb044b1f9e13a79e768d"
+    },
+    {
+      "path": "icons/demo-sifu-navy.svg",
+      "bytes": 506,
+      "sha256": "bf50cb9a75ad6a02f7588e2645c6e371d43a4fd48ebbc150d5072b32b6bfeded"
+    },
+    {
+      "path": "icons/demo-sifu-white.png",
+      "bytes": 11309,
+      "sha256": "68e65de5d89b1151d34d320754a8f11833c95118332872f8a0f30a29904f130b"
+    },
+    {
+      "path": "icons/demo-sifu-white.svg",
+      "bytes": 506,
+      "sha256": "627ff45ba906a8bd21e2b899b35011f12ab2079b4ae149a5f6a52d9d9760b0be"
+    },
+    {
+      "path": "icons/talent-0-navy.png",
+      "bytes": 12160,
+      "sha256": "6d54c7278ab5edbc71cb4d15c9adf522f7eb2ceffdc651fd796b1470c1287ee0"
+    },
+    {
+      "path": "icons/talent-0-navy.svg",
+      "bytes": 420,
+      "sha256": "4ff3ee0f4dbf7de897c787eb9aa5033a2c6bb5ad6a59af4728fe7e4c2b5f0789"
+    },
+    {
+      "path": "icons/talent-0-white.png",
+      "bytes": 10705,
+      "sha256": "a1c349c47728539b32c7ef57ec7a987c5b2355a9c7b71384686c7dd0193b12b2"
+    },
+    {
+      "path": "icons/talent-0-white.svg",
+      "bytes": 420,
+      "sha256": "009ad0a540afc608f39e7d50f1edf83a117dc6e715256a15cb4d276937845d4b"
+    },
+    {
+      "path": "icons/talent-1-navy.png",
+      "bytes": 11947,
+      "sha256": "b1ab4d8ff2aed066aabc07bfcf2060650d59828228952c05643ec2c5e5b97f8e"
+    },
+    {
+      "path": "icons/talent-1-navy.svg",
+      "bytes": 452,
+      "sha256": "392d881b30602f5d2f7cb1de87f4ffe418ebe202818ea7839655e81f5961b879"
+    },
+    {
+      "path": "icons/talent-1-white.png",
+      "bytes": 10639,
+      "sha256": "9ac05f9d09370469395b2050fa912be6e0fa948d58a9b71768952cda6f50884e"
+    },
+    {
+      "path": "icons/talent-1-white.svg",
+      "bytes": 452,
+      "sha256": "a04618c0fb5425a49a370ae620a9f8f5582559aa416969aa770c62e0c3f7e749"
+    },
+    {
+      "path": "icons/ui-01-navy.png",
+      "bytes": 4641,
+      "sha256": "3aa8ac0bd4e7e2d42cbb29858371192e60c197a24c3833744085bb23e71772bd"
+    },
+    {
+      "path": "icons/ui-01-navy.svg",
+      "bytes": 265,
+      "sha256": "3e81c3d06b980e0068b84e55a3874b529a7ccadca9f236ffdd6872cb8eb85238"
+    },
+    {
+      "path": "icons/ui-01-white.png",
+      "bytes": 3698,
+      "sha256": "0f7a040f771e8c44b4f2a3d0085751fab863485f6e57d562f767c137820befe3"
+    },
+    {
+      "path": "icons/ui-01-white.svg",
+      "bytes": 265,
+      "sha256": "d220d1a5b0feaa0fa8ebfd05a112629647a8969ae904785241428ca27535d773"
+    },
+    {
+      "path": "icons/ui-02-navy.png",
+      "bytes": 4072,
+      "sha256": "a4bc34f2dbfd0956ebac812b0a86bad19c9232390f3e3b6965c19045f280fc5f"
+    },
+    {
+      "path": "icons/ui-02-navy.svg",
+      "bytes": 258,
+      "sha256": "00534a2084f1dd52e743615330a87a535515ccd7a20eb1ff2bd995778afcb4e4"
+    },
+    {
+      "path": "icons/ui-02-white.png",
+      "bytes": 3543,
+      "sha256": "7b9b00e0993b6cde2a9782fd21a3a60e9aa8408cf0ff3f808c28cde89155ec4b"
+    },
+    {
+      "path": "icons/ui-02-white.svg",
+      "bytes": 258,
+      "sha256": "f7d3700a6427372f05dc6666102cc4759567e490ad82fd4dba011b065a90aaee"
+    },
+    {
+      "path": "icons/ui-03-navy.png",
+      "bytes": 5540,
+      "sha256": "888aaae3f32499c191ad53ee52d684c033a14caa328ca092b94e45b18d75d3d6"
+    },
+    {
+      "path": "icons/ui-03-navy.svg",
+      "bytes": 264,
+      "sha256": "c1670487052ea49974d544f3d95818f17e8410a70983ca6d027b01fbc8ec3b4f"
+    },
+    {
+      "path": "icons/ui-03-white.png",
+      "bytes": 4923,
+      "sha256": "883354527cae1eb2a5b22f2c65f4122a89c859254fa392d9f413ec14819c19ac"
+    },
+    {
+      "path": "icons/ui-03-white.svg",
+      "bytes": 264,
+      "sha256": "1053a632bd7e770e751a76a7112622b9e0f6bb0da0b45bdbbfc6a4183a50bbfb"
+    },
+    {
+      "path": "icons/ui-04-navy.png",
+      "bytes": 4075,
+      "sha256": "e1f7a450e07ac5f1632a31231f145af8ee009b349c492cc696e1711a41041de4"
+    },
+    {
+      "path": "icons/ui-04-navy.svg",
+      "bytes": 256,
+      "sha256": "1dd048b8ac9f4fc00694ef07b1275a2ec0e1bddddb1a1741b7b88a1b22090ca4"
+    },
+    {
+      "path": "icons/ui-04-white.png",
+      "bytes": 3576,
+      "sha256": "38384649a4b9754dd86c43bf0ca16ce60ca993375912a2413495bd2c3afa21a9"
+    },
+    {
+      "path": "icons/ui-04-white.svg",
+      "bytes": 256,
+      "sha256": "3a69c76339cbc625687da93f38455539e8576004f0e439596d6827ad10d23997"
+    },
+    {
+      "path": "icons/ui-05-navy.png",
+      "bytes": 1664,
+      "sha256": "f8342686df38a680b935abbca7ec0a18ab392e89098b6ab31bdd42ede80674d2"
+    },
+    {
+      "path": "icons/ui-05-navy.svg",
+      "bytes": 346,
+      "sha256": "c7771dbc63e05fd5136ffe6bcb0cf38e165652c191f6b26e6c96d10683926b35"
+    },
+    {
+      "path": "icons/ui-05-white.png",
+      "bytes": 1664,
+      "sha256": "f8342686df38a680b935abbca7ec0a18ab392e89098b6ab31bdd42ede80674d2"
+    },
+    {
+      "path": "icons/ui-05-white.svg",
+      "bytes": 346,
+      "sha256": "835e4ef840d86674adb01bb4a834533e1b45490864b7efa91707c91d91d76305"
+    },
+    {
+      "path": "icons/ui-06-navy.png",
+      "bytes": 8350,
+      "sha256": "dd8f0a57cc27f0136e157fbbfde79e67e7de2b6a4287574d93205ca2dce5b666"
+    },
+    {
+      "path": "icons/ui-06-navy.svg",
+      "bytes": 300,
+      "sha256": "79bcacfcc5b129dfb9cedd78050e148f9b518643732168f4bbf350a7a12f76ec"
+    },
+    {
+      "path": "icons/ui-06-white.png",
+      "bytes": 6017,
+      "sha256": "b2854107371661e19dab89b65faf9e55aa39a13a6742874edda462fec566018f"
+    },
+    {
+      "path": "icons/ui-06-white.svg",
+      "bytes": 300,
+      "sha256": "ac8a85865203e8ae2c83661921559a5f31921318e2f036417252e85e99d6fad9"
+    },
+    {
+      "path": "media/better-ask-erni.png",
+      "bytes": 21299,
+      "sha256": "e952bed3d789b491c9a739171ba02244517552725c3724e9195945eb7528af92"
+    },
+    {
+      "path": "media/erni-logo.png",
+      "bytes": 27800,
+      "sha256": "578409b3aed33917cfdaa2f365c55161fb44ec0f7bcd8e0ae1180d44c30c0ef4"
+    },
+    {
+      "path": "media/hero-poster.jpg",
+      "bytes": 32790,
+      "sha256": "b241253ff392cec1351660e6704bcef0fdf1e9f840b4441400edbf58ffe3299a"
+    },
+    {
+      "path": "media/hero.mp4",
+      "bytes": 4548329,
+      "sha256": "055a94ed3015295bd6c7642433398d1e5aeea94261dfe58070f713582e712063"
+    },
+    {
+      "path": "media/sifu-robot-piano.jpg",
+      "bytes": 189363,
+      "sha256": "dfa6cf907b2de9164ec9037b3ee4cb7e91f70f1d1692e86b1d3737784b34c418"
+    },
+    {
+      "path": "media/sifu.mp4",
+      "bytes": 26330880,
+      "sha256": "1dea57c0561125dbf8237c024d1e584fc5e05fb557edb05b9c73aafb9c1f1a7b"
+    },
+    {
+      "path": "media/talent-arena.mp4",
+      "bytes": 13644631,
+      "sha256": "2880ee35c7adb4a479543ada1ac0ffe0f4071b9b6a115379cc1fb4cd5d01af58"
+    }
+  ]
+}
