@@ -7,7 +7,7 @@ import { apiError } from "@/lib/http";
 import { createBlobName, createBlobSas } from "@/lib/blobStorage";
 import { getMediaEnvironment } from "@/lib/env";
 export const runtime = "nodejs";
-const types = ["image/jpeg", "image/png", "image/webp", "video/mp4"] as const;
+const types = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4"] as const;
 const maxBytes = 250 * 1024 * 1024;
 const uploadSchema = z.object({ fileName: z.string().trim().min(1).max(260), contentType: z.enum(types), sizeBytes: z.number().int().positive().max(maxBytes) });
 export async function GET() {

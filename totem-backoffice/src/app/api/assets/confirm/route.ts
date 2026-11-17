@@ -7,7 +7,7 @@ import { apiError } from "@/lib/http";
 import { getBlobClient } from "@/lib/blobStorage";
 import { getMediaEnvironment } from "@/lib/env";
 export const runtime = "nodejs";
-const schema = z.object({ assetId: z.uuid(), blobName: z.string().regex(/^assets\/[0-9a-f-]{36}$/i), fileName: z.string().trim().min(1).max(260), contentType: z.enum(["image/jpeg", "image/png", "image/webp", "video/mp4"]) });
+const schema = z.object({ assetId: z.uuid(), blobName: z.string().regex(/^assets\/[0-9a-f-]{36}$/i), fileName: z.string().trim().min(1).max(260), contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4"]) });
 export async function POST(request: Request) {
   try {
     const auth = await requireUser(); if (auth.error) return auth.error;
@@ -30,13 +30,14 @@ export async function POST(request: Request) {
     const actualType = head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff ? "image/jpeg"
       : head.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ? "image/png"
       : head.toString("ascii", 0, 4) === "RIFF" && head.toString("ascii", 8, 12) === "WEBP" ? "image/webp"
+      : ["GIF87a", "GIF89a"].includes(head.toString("ascii", 0, 6)) ? "image/gif"
       : head.toString("ascii", 4, 8) === "ftyp" && mp4Brands.includes(brand) ? "video/mp4" : null;
     if (!actualType) {
       const isHeif = head.toString("ascii", 4, 8) === "ftyp" && heifBrands.includes(brand);
       await blob.deleteIfExists();
       return NextResponse.json({ error: isHeif
         ? `“${body.fileName}” parece ser HEIC/AVIF, un formato que no admite la biblioteca. Expórtalo o conviértelo a JPEG o PNG y vuelve a subirlo.`
-        : `No se reconoce el contenido de “${body.fileName}”. Sube un archivo JPEG, PNG, WebP o MP4 válido.` }, { status: 400 });
+        : `No se reconoce el contenido de “${body.fileName}”. Sube un archivo JPEG, PNG, WebP, GIF o MP4 válido.` }, { status: 400 });
     }
     // The extension or browser MIME can be wrong even when the file is a valid
     // supported image. Trust the detected bytes and correct the Blob metadata.

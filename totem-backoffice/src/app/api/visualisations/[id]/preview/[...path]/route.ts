@@ -10,7 +10,7 @@ import type { VisualisationDocument } from "@/types/content";
 import manifest from "../../../../../../../../packages/totem-original/manifest.json";
 
 export const runtime = "nodejs";
-const mime:Record<string,string>={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".mp4":"video/mp4",".woff2":"font/woff2"};
+const mime:Record<string,string>={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".gif":"image/gif",".mp4":"video/mp4",".woff2":"font/woff2"};
 const repoRoot=path.resolve(process.cwd(),"..");
 const responseBody=(data:Uint8Array)=>data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength) as ArrayBuffer;
 type Context={params:Promise<{id:string;path:string[]}>};

@@ -4,8 +4,8 @@ import { BlockBlobClient } from "@azure/storage-blob";
 import { IconPhoto, IconPlus, IconTrash } from "@tabler/icons-react";
 
 export type MediaAsset = { id: string; fileName: string; contentType: string; sizeBytes: number; createdAt: string; url: string; tags: string[]; isSystem?: boolean };
-const supportedTypes = new Set(["image/jpeg", "image/png", "image/webp", "video/mp4"]);
-const typeFromExtension: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", mp4: "video/mp4" };
+const supportedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4"]);
+const typeFromExtension: Record<string, string> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4" };
 
 export function MediaLibrary({ selecting, protectedAssetIds, onPick, mediaType }: { mediaType?: "image" | "video" | "any"; selecting: boolean; protectedAssetIds: string[]; onPick: (asset: MediaAsset) => void }) {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
@@ -41,7 +41,7 @@ export function MediaLibrary({ selecting, protectedAssetIds, onPick, mediaType }
       for (const file of Array.from(files)) {
         const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
         const contentType = supportedTypes.has(file.type) ? file.type : typeFromExtension[extension];
-        if (!contentType) throw new Error(`${file.name}: use a JPEG, PNG, WebP or MP4 file.`);
+        if (!contentType) throw new Error(`${file.name}: use a JPEG, PNG, WebP, GIF or MP4 file.`);
         const response = await fetch("/api/assets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fileName: file.name, contentType, sizeBytes: file.size }) });
         const ticket = await response.json();
         if (!response.ok) throw new Error(ticket.error || `Could not prepare ${file.name}.`);
@@ -94,7 +94,7 @@ export function MediaLibrary({ selecting, protectedAssetIds, onPick, mediaType }
 
   return <div className="page-heading media-library" style={{ display: "block" }}>
     <div className="page-heading"><div><div className="eyebrow">SHARED ASSETS</div><h1>Media library</h1><p>Images, reusable PNG icons and videos are shared by users of this environment.</p></div>
-      <label className="primary-button compact media-upload"><IconPlus size={17}/>{busy ? "Uploading…" : "Upload media"}<input type="file" accept={mediaType === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp"} multiple disabled={busy} onChange={event => { void upload(event.target.files); event.currentTarget.value = ""; }}/></label>
+      <label className="primary-button compact media-upload"><IconPlus size={17}/>{busy ? "Uploading…" : "Upload media"}<input type="file" accept={mediaType === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp,image/gif"} multiple disabled={busy} onChange={event => { void upload(event.target.files); event.currentTarget.value = ""; }}/></label>
     </div>
     {selecting && <p className="media-hint">Choose a {mediaType === "video" ? "video" : "PNG icon or image"} to add it to the selected element.</p>}
     <div className="media-filters"><label>Filter by name<input aria-label="Filter images by name" value={nameFilter} onChange={event => setNameFilter(event.target.value)} placeholder="Search name…" /></label><label>Filter by tag<select aria-label="Filter images by tag" value={tagFilter} onChange={event => setTagFilter(event.target.value)}><option value="">All tags</option>{knownTags.map(tag => <option key={tag} value={tag}>{tag}</option>)}</select></label></div>
@@ -110,7 +110,7 @@ export function MediaLibrary({ selecting, protectedAssetIds, onPick, mediaType }
         </button>
         <div className="media-card-actions"><button className="media-card-edit" onClick={() => openEditor(asset)} title="Edit name and tags">Details</button><button className="media-card-delete" onClick={() => void remove(asset)} disabled={busy || inUse} title={asset.isSystem ? "Default Totem original resource" : inUse ? "Used by the open draft" : "Delete media"}><IconTrash size={16}/>Delete</button></div>
       </article>;
-    })}</div> : <div className="empty-state"><div className="empty-icon"><IconPhoto size={28}/></div><h2>{assets.length ? "No matching media" : "Your library is empty"}</h2><p>{assets.length ? "Try another name or tag filter." : "Upload JPG, PNG, WebP or MP4 files (up to 250 MB)."}</p></div>}
+    })}</div> : <div className="empty-state"><div className="empty-icon"><IconPhoto size={28}/></div><h2>{assets.length ? "No matching media" : "Your library is empty"}</h2><p>{assets.length ? "Try another name or tag filter." : "Upload JPG, PNG, WebP, GIF or MP4 files (up to 250 MB)."}</p></div>}
     {editing && <div className="media-modal-backdrop" onMouseDown={event => { if (event.target === event.currentTarget && !busy) setEditing(null); }}><section className="media-modal" role="dialog" aria-modal="true" aria-labelledby="media-modal-title">
       <h2 id="media-modal-title">Image details</h2><p className="media-modal-filename">{editing.fileName}</p>
       <label>Name<input autoFocus aria-label="Image name" value={editName} maxLength={260} onChange={event => setEditName(event.target.value)} /></label>

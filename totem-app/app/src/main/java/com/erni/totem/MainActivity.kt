@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContentView(webView)
-        webView.loadUrl("https://appassets.androidplatform.net/assets/index.html")
+        webView.loadUrl("https://appassets.androidplatform.net/assets/launcher.html")
     }
 
     @Deprecated("Deprecated in Java")

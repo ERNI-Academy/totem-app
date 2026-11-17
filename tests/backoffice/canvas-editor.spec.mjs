@@ -114,7 +114,7 @@ test('new editor: palette, gestures, shell media, persistence, publishing and of
   await page.getByRole('button',{name:'Publish',exact:true}).click();expect((await published).ok()).toBe(true);
   const exported=await context.request.get(`/api/visualisations/${row.id}/export?version=1`);expect(exported.status()).toBe(200);
   const temp=await mkdtemp(path.join(tmpdir(),'totem-canvas-'));const zip=path.join(temp,'bundle.zip');await writeFile(zip,await exported.body());execFileSync('unzip',['-q',zip,'-d',path.join(temp,'web')]);
-  const web=path.join(temp,'web');const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.png':'image/png','.jpg':'image/jpeg','.mp4':'video/mp4'};
+  const web=path.join(temp,'web');const mime={'.html':'text/html','.js':'text/javascript','.css':'text/css','.woff2':'font/woff2','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.gif':'image/gif','.mp4':'video/mp4'};
   // Opening index.html directly also works, without a local web server.
   const direct=await context.newPage(),directErrors=[],directRequests=[];
   direct.on('pageerror',error=>directErrors.push(error.message));direct.on('request',request=>directRequests.push(request.url()));

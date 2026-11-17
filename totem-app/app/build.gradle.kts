@@ -1,15 +1,17 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
 
-val versionProperties = java.util.Properties().apply {
+val versionProperties = Properties().apply {
     load(rootProject.file("version.properties").inputStream())
 }
 
 android {
     namespace = "com.erni.totem"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.erni.totem"
@@ -47,6 +49,7 @@ val bundleTotemOriginal by tasks.registering(Exec::class) {
     outputs.dir(rootProject.file("../packages/totem-original/dist/android"))
 }
 tasks.named("preBuild") { dependsOn(bundleTotemOriginal) }
+bundleTotemOriginal.configure { outputs.upToDateWhen { false } }
 
 dependencies {
     implementation("androidx.core:core-ktx:1.17.0")

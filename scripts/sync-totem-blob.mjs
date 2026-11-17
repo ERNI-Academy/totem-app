@@ -9,7 +9,7 @@ import manifest from '../packages/totem-original/manifest.json' with {type:'json
 
 const service=BlobServiceClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING);
 const prefix=`totem-original/${manifest.packSha256}`;
-const types={'.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg','.mp4':'video/mp4','.woff2':'font/woff2','.css':'text/css','.js':'text/javascript','.json':'application/json','.html':'text/html','.md':'text/markdown'};
+const types={'.png':'image/png','.svg':'image/svg+xml','.jpg':'image/jpeg','.gif':'image/gif','.mp4':'video/mp4','.woff2':'font/woff2','.css':'text/css','.js':'text/javascript','.json':'application/json','.html':'text/html','.md':'text/markdown'};
 const displayName=path=>{const file=path.split('/').pop();const names={'ui-01':'arrow-forward','ui-02':'arrow-back','ui-03':'close','ui-04':'chevron-forward','ui-05':'ai-vision-roof','ui-06':'video-placeholder','talent-0':'talent-purpose','talent-1':'talent-arena'};return Object.entries(names).reduce((s,[a,b])=>s.replace(a+'-',b+'-'),file);};
 const contentType=path=>types[path.slice(path.lastIndexOf('.'))]||'application/octet-stream';
 const sha=buffer=>createHash('sha256').update(buffer).digest('hex');
@@ -38,7 +38,7 @@ if(process.env.DATABASE_URL){
   const client=await pool.connect();
   try{
     await client.query('BEGIN');
-    for(const environment of ['development','production']) for(const entry of manifest.resources.filter(e=>/\.(png|jpg|mp4)$/.test(e.path))) {
+    for(const environment of ['development','production']) for(const entry of manifest.resources.filter(e=>/\.(png|jpg|gif|mp4)$/.test(e.path))) {
       await client.query('INSERT INTO assets(id,file_name,content_type,size_bytes,sha256,storage_key,environment) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(id) DO UPDATE SET file_name=excluded.file_name,storage_key=excluded.storage_key,sha256=excluded.sha256,size_bytes=excluded.size_bytes',[assetId(entry.path,environment),displayName(entry.path),contentType(entry.path),entry.bytes,entry.sha256,`${prefix}/${entry.path}`,environment]);
     }
     await applyOriginalPublication(client);
