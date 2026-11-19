@@ -1429,11 +1429,16 @@ function Empty({ onCreate }: { onCreate: () => void }) {
 function UsersPanel({ currentUser }: { currentUser: AppUser }) {
   const [users, setUsers] = useState<AppUser[]>([]),
     [message, setMessage] = useState("");
+  const [selected, setSelected] = useState<AppUser | null>(null);
   useEffect(() => {
+    if (currentUser.role !== "admin") return;
     fetch("/api/users")
-      .then(async (r) => (r.ok ? (await r.json()).users : []))
-      .then(setUsers);
-  }, []);
+      .then(async response => {
+        if (!response.ok) throw new Error("Could not load users.");
+        setUsers((await response.json()).users);
+      })
+      .catch(() => setMessage("Could not load users."));
+  }, [currentUser.role]);
   const [show, setShow] = useState(false);
   if (currentUser.role !== "admin")
     return (
@@ -1444,6 +1449,7 @@ function UsersPanel({ currentUser }: { currentUser: AppUser }) {
         </div>
       </div>
     );
+  if (selected) return <UserActivationDetails key={selected.id} user={selected} onBack={() => setSelected(null)} />;
   return (
     <>
       <div className="page-heading">
@@ -1473,14 +1479,11 @@ function UsersPanel({ currentUser }: { currentUser: AppUser }) {
               }),
             });
             const d = await r.json();
-            setMessage(
-              r.ok
-                ? `Invitation prepared for ${d.user.email}. Copy and share this activation link: ${d.activationUrl}`
-                : d.error,
-            );
+            setMessage(r.ok ? "" : d.error);
             if (r.ok) {
-              setUsers([...users, d.user]);
+              setUsers(previous => [...previous, d.user]);
               setShow(false);
+              setSelected(d.user);
             }
           }}
         >
@@ -1491,19 +1494,19 @@ function UsersPanel({ currentUser }: { currentUser: AppUser }) {
             <option value="admin">Admin</option>
           </select>
           <button className="primary-button compact">Add</button>
-          {message && <p>{message}</p>}
         </form>
       )}
+      {message && <p className="form-error" role="alert">{message}</p>}
       <div className="users-list">
         {users.map((u) => (
           <div className="user-row" key={u.id}>
             <span className="user-badge">
               {u.displayName.slice(0, 1).toUpperCase()}
             </span>
-            <span>
+            <button type="button" className="user-details-button" onClick={() => setSelected(u)}>
               {u.displayName}
               <small>{u.email}</small>
-            </span>
+            </button>
             <span className="tag">{u.role}</span>
             <button
               className="small-icon"
@@ -1511,8 +1514,9 @@ function UsersPanel({ currentUser }: { currentUser: AppUser }) {
               title="Deactivate user"
               onClick={async () => {
                 if (!confirm(`Deactivate ${u.displayName}?`)) return;
-                await fetch(`/api/users/${u.id}`, { method: "DELETE" });
-                setUsers(users.filter((x) => x.id !== u.id));
+                const response = await fetch(`/api/users/${u.id}`, { method: "DELETE" });
+                if (response.ok) setUsers(previous => previous.filter(x => x.id !== u.id));
+                else setMessage("Could not deactivate user.");
               }}
             >
               Deactivate
@@ -1520,6 +1524,104 @@ function UsersPanel({ currentUser }: { currentUser: AppUser }) {
           </div>
         ))}
       </div>
+    </>
+  );
+}
+
+type UserActivation = { pending: boolean; activationUrl: string | null; expiresAt: string | null };
+
+function UserActivationDetails({ user, onBack }: { user: AppUser; onBack: () => void }) {
+  const [status, setStatus] = useState<UserActivation | null>(null);
+  const [error, setError] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
+  const [renewing, setRenewing] = useState(false);
+  const endpoint = `/api/users/${user.id}/activation`;
+
+  useEffect(() => {
+    if (renewing) return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function refresh() {
+      try {
+        const response = await fetch(endpoint, { cache: "no-store", signal: controller.signal });
+        if (!response.ok) throw new Error("Could not load activation status.");
+        const next: UserActivation = await response.json();
+        if (controller.signal.aborted) return;
+        setError(previous => previous === "Could not load activation status." ? "" : previous);
+        setStatus(next);
+        if (!next.pending) return;
+        const remaining = next.expiresAt ? Date.parse(next.expiresAt) - Date.now() : 5000;
+        timer = setTimeout(refresh, Math.min(5000, Math.max(100, remaining)));
+      } catch {
+        if (controller.signal.aborted) return;
+        setStatus(null);
+        setError("Could not load activation status.");
+        timer = setTimeout(refresh, 5000);
+      }
+    }
+    void refresh();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [endpoint, renewing]);
+
+  async function renew() {
+    setRenewing(true);
+    setError("");
+    setCopyMessage("");
+    try {
+      const response = await fetch(endpoint, { method: "POST" });
+      if (!response.ok) throw new Error("Could not create a new activation link.");
+      setStatus(await response.json());
+    } catch {
+      setError("Could not create a new activation link.");
+    } finally {
+      setRenewing(false);
+    }
+  }
+
+  const link = status?.expiresAt && Date.parse(status.expiresAt) > Date.now() ? status.activationUrl : null;
+  useEffect(() => {
+    if (!link || !status?.expiresAt) return;
+    const timer = setTimeout(() => {
+      setStatus(previous => previous?.activationUrl === link ? { ...previous, activationUrl: null, expiresAt: null } : previous);
+      setCopyMessage("");
+    }, Math.max(0, Date.parse(status.expiresAt) - Date.now()));
+    return () => clearTimeout(timer);
+  }, [link, status?.expiresAt]);
+
+  return (
+    <>
+      <div className="page-heading">
+        <div><h1>{user.displayName}</h1><p>{user.email} · {user.role}</p></div>
+        <button type="button" className="outline-button" onClick={onBack}>Back to users</button>
+      </div>
+      <section className="user-activation-card" aria-label="Account activation">
+        {error && <p className="form-error" role="alert">{error}</p>}
+        {!status && !error && <p role="status">Loading activation status…</p>}
+        {status && !status.pending && <p role="status">User activated</p>}
+        {status?.pending && (link ? (
+          <>
+            <label htmlFor="user-activation-link">Activation link</label>
+            <div className="user-activation-actions">
+              <input id="user-activation-link" readOnly value={link} onFocus={event => event.target.select()} />
+              <button type="button" className="outline-button" onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(link);
+                  setCopyMessage("Link copied.");
+                } catch {
+                  setCopyMessage("Select and copy the link from the field.");
+                }
+              }}>Copy link</button>
+            </div>
+            <p className="muted">Expires {new Date(status.expiresAt!).toLocaleString()}</p>
+            {copyMessage && <p role="status">{copyMessage}</p>}
+          </>
+        ) : (
+          <>
+            <p role="status">User not activated</p>
+            <button type="button" className="primary-button compact" disabled={renewing} onClick={renew}>Generate new link</button>
+          </>
+        ))}
+      </section>
     </>
   );
 }

@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS one_time_tokens (
   expires_at timestamptz NOT NULL,
   used_at timestamptz
 );
+ALTER TABLE one_time_tokens ADD COLUMN IF NOT EXISTS token_ciphertext text;
 
 CREATE TABLE IF NOT EXISTS visualisations (
   id uuid PRIMARY KEY,
