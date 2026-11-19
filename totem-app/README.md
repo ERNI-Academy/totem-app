@@ -1,49 +1,29 @@
-# Totem Android
+# Tótem Android
 
-Aplicación Android vertical con **Totem original publicado como visualización predeterminada**, disponible sin conexión. La APK empaqueta el proyecto web original completo de `packages/totem-original/web`: el mismo `index.html`, CSS, JavaScript, SVG, fuentes, imágenes, vídeos y Three.js.
+La APK arranca con **Totem original** y recuerda la última visualización elegida. Pulsa tres veces en 700 ms sobre el logo ERNI superior izquierdo para abrir la galería. Si el logo se ha ocultado, pulsa en la misma zona de la cabecera.
 
-La entrada de WebView es el `index.html` original servido desde los assets locales por `WebViewAssetLoader`. No carga React, el backoffice, Azure ni PostgreSQL. `publication.json` registra los hashes del proyecto y la publicación predeterminada.
+Cada apertura consulta el catálogo publicado en Vercel. Las tarjetas muestran la portada y el nombre. El icono ↻ indica una actualización. Al seleccionar una versión nueva, el tótem descarga el ZIP desde Azure Blob, verifica su tamaño y SHA-256, lo extrae en su almacenamiento privado y prueba su pantalla inicial. Solo entonces activa la versión y retira la anterior. Sin red, el menú ofrece las versiones guardadas y un botón para reintentar.
 
-## Preview en Chromium
+## Probar en Chromium
 
-Desde la raíz del repositorio, con `totem-backoffice/.env.local` configurado para PostgreSQL y Azure Blob:
+Desde la raíz, inicia el backoffice local con `npm run dev` y, en otra terminal, ejecuta `npm run preview:totem`. Abre [el simulador en Chromium](http://127.0.0.1:4317/apk/launcher.html). Usa el puerto 3000 para el backoffice, o indica su origen con `TOTEM_BACKOFFICE_URL`. El simulador guarda los paquetes en `packages/totem-original/dist/simulator-cache`. El navegador recuerda la selección en su perfil. Para simular un corte, detén el backoffice y deja el simulador en marcha.
 
-```bash
-npm run preview:totem
-```
+## Publicaciones
 
-Abre `http://127.0.0.1:4317/apk/launcher.html` en Chromium. Es el mismo catálogo offline que se empaqueta para Android. Haz tres clics rápidos sobre el logo ERNI superior izquierdo para abrir el selector. El simulador conserva la visualización elegida en el almacenamiento local del navegador; borrar los datos del sitio reinicia Totem original.
+La ruta pública `GET /api/totem/catalog` consulta PostgreSQL en cada petición y devuelve enlaces temporales de lectura a los ZIP y miniaturas en el contenedor privado del entorno. Al publicar, el backoffice captura la pantalla inicial a 1080 × 1920 y guarda una miniatura WebP de 270 × 480. El borrador sigue siendo privado. Ejecuta `npm run catalog:prepare` después de preparar una base anterior o de importar una nueva versión protegida de Totem original. Es idempotente. En local se necesita Chromium de Playwright (`npx playwright install chromium`) o la ruta a Chromium en `TOTEM_CHROMIUM`.
 
-El catálogo incorpora Totem original y la versión publicada más reciente de cada visualización no protegida. Los borradores se omiten. La nueva publicación se recoge al volver a generar el paquete. Si el catálogo cambia, el selector vuelve a Totem original.
+La APK consulta [el catálogo de producción](https://totem-app-livid.vercel.app/api/totem/catalog). La compilación solo utiliza los archivos del repositorio. Los datos de acceso a PostgreSQL y Blob pertenecen al servidor.
 
-## Compilar
+## Generar la APK
 
-1. Requisitos: Node.js 22.12+, JDK 17, Android SDK Platform 36 y Build Tools 35.0.0. Platform 36 es necesario por las dependencias AndroidX actuales; el `targetSdk` sigue siendo 35. Este equipo tiene JDK y SDK instalados en `~/.local/share`; desde la raíz, carga sus variables con `source scripts/android-env.sh`.
-2. Asegúrate de que `totem-backoffice/.env.local` tenga `DATABASE_URL`, `AZURE_STORAGE_CONNECTION_STRING` y `AZURE_STORAGE_CONTAINER` con acceso al entorno cuyo catálogo quieres empaquetar.
-3. Desde la raíz ejecuta `npm run build:totem-apk` para incluir Totem original y las últimas publicaciones.
-4. Desde esta carpeta genera la APK de depuración con `./gradlew assembleDebug`. Gradle vuelve a recopilar el catálogo antes de compilar.
-5. APK resultante: `app/build/outputs/apk/debug/app-debug.apk`. Para instalar con un dispositivo conectado y `adb` configurado: `adb install -r app/build/outputs/apk/debug/app-debug.apk`.
-
-Para repetir la compilación tras cambios:
+Desde la raíz, con Node 22.12+, JDK 17 y Android SDK Platform 36:
 
 ```bash
-cd /home/davidwalker/Projects/totem-app
 source scripts/android-env.sh
-npm run preview:totem
-```
-
-Abre en Chromium la URL que imprime el servidor y prueba tres clics rápidos en el logo. Cuando esté listo para instalar:
-
-```bash
 cd totem-app
 ./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-`adb install` requiere un tótem o dispositivo Android conectado y autorizado. Para compilar sin instalar, basta con los dos primeros comandos de ese bloque.
+El archivo de prueba queda en `app/build/outputs/apk/debug/app-debug.apk`. Para instalarlo, cópialo al pendrive y ábrelo desde el gestor de archivos del tótem. Android necesita la misma firma que la instalación anterior para actualizarla conservando sus datos. Para distribuir una release firmada, usa la clave de distribución del proyecto. [Versiones y firma](release/README.md).
 
-La APK de depuración queda en `app/build/outputs/apk/debug/`. `versionName` y `versionCode` se editan en `version.properties`. La firma y archivo de releases se describen en [release/README.md](release/README.md).
-
-La APK no necesita red ni credenciales en el tótem: las publicaciones se descargan durante la compilación local y se empaquetan como assets. Los borradores y las publicaciones posteriores no aparecen en un APK ya instalado hasta regenerarlo y reinstalarlo.
-
-Consulta la [auditoría de funcionalidades](../docs/AUDITORIA_TOTEM_ORIGINAL.md) y las [instrucciones del módulo compartido](../packages/totem-original/README.md).
+Tras instalar esta versión, publicar contenido solo requiere el backoffice. Antes de distribuir, abre la galería desde el tótem con acceso a Internet y selecciona una publicación para validar la conexión completa con Vercel y Blob.

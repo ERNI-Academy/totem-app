@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+  <title>Tótem ERNI</title><link rel="stylesheet" href="fonts/fonts.css"><link rel="stylesheet" href="launcher.css">
+</head>
+<body>
+  <main id="screen"></main>
+  <dialog id="picker" aria-labelledby="gallery-title">
+    <header><h1 id="gallery-title">Visualizaciones</h1><button id="close" aria-label="Cerrar galería">×</button></header>
+    <div id="feedback"><span role="status" id="status"></span><button hidden id="retry">Reintentar</button> <button hidden id="saved">Abrir copia guardada</button><progress hidden id="progress" max="100"></progress></div>
+    <div id="items"></div>
+  </dialog>
+  <script type="module" src="launcher.js"></script>
+</body></html>

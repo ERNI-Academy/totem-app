@@ -9,31 +9,9 @@ const sha=data=>createHash('sha256').update(data).digest('hex');
 test('every APK web file is byte-identical to the reference project',async()=>{
   for(const entry of manifest.webFiles){const source=await readFile(path.join(root,'web',entry.path)),apk=await readFile(path.join(root,'dist/android',entry.path));expect(source.length,entry.path).toBe(entry.bytes);expect(sha(source),entry.path).toBe(entry.sha256);expect(apk.equals(source),entry.path).toBe(true);}
   const publication=JSON.parse(await readFile(`${root}/dist/android/publication.json`,'utf8'));expect(publication.isDefault).toBe(true);expect(publication.webSha256).toBe(manifest.webSha256);
-  const catalog=JSON.parse(await readFile(`${root}/dist/android/catalog.json`,'utf8'));expect(catalog.defaultId).toBe('00000000-0000-4000-8000-000000000001');expect(catalog.visualisations[0].isDefault).toBe(true);
+  const original=JSON.parse(await readFile(`${root}/dist/android/original.json`,'utf8'));expect(original.id).toBe('00000000-0000-4000-8000-000000000001');expect(original.bundleSha256).toBe(manifest.webSha256);
   expect(manifest.webFiles.some(f=>f.path==='index.html')).toBe(true);
   expect(manifest.webFiles.some(f=>f.path==='vendor/three.min.js')).toBe(true);
-});
-
-test('APK launcher opens on three logo clicks and remembers the selected publication',async({page})=>{
-  const defaultId='00000000-0000-4000-8000-000000000001';
-  let catalog={defaultId,revision:'test-revision-1',visualisations:[{id:defaultId,name:'Totem original',path:'index.html',isDefault:true},{id:'test-publication',name:'Published test',version:1,path:'index.html',isDefault:false}]};
-  await page.route('**/apk/catalog.json',route=>route.fulfill({contentType:'application/json',body:JSON.stringify(catalog)}));
-  await page.goto('http://127.0.0.1:4317/apk/launcher.html');
-  const frame=page.frameLocator('#totem');
-  await frame.locator('.hdr .logo').click({clickCount:3,delay:100});
-  await expect(page.locator('#picker')).toBeVisible();
-  await expect(page.locator('#items button')).toHaveCount(2);
-  // Selecting reloads the iframe to the chosen offline entrypoint; dispatch
-  // the menu click directly so Playwright does not wait on iframe navigation.
-  await page.locator('#items button').nth(1).evaluate(button=>button.click());
-  await expect(page.locator('#picker')).toBeHidden();
-  await expect(page.locator('#totem')).toHaveAttribute('src','index.html');
-  await expect.poll(()=>page.evaluate(()=>localStorage.getItem('totem-active-publication'))).toBe('test-publication');
-  await page.reload();
-  await expect.poll(()=>page.evaluate(()=>localStorage.getItem('totem-active-publication'))).toBe('test-publication');
-  catalog={defaultId,revision:'test-revision-2',visualisations:[{id:defaultId,name:'Totem original',path:'index.html',isDefault:true}]};
-  await page.reload();
-  await expect.poll(()=>page.evaluate(()=>localStorage.getItem('totem-active-publication'))).toBe(defaultId);
 });
 
 for(const kind of ['reference','apk'])test(`${kind}: source interactions, all cards and original media operate offline`,async({page})=>{

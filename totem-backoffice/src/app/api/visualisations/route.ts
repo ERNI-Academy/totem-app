@@ -1,7 +1,6 @@
 import { documentSchema } from "@/lib/contentSchema";
 import { createCanvasDocument } from "@/lib/canvasDocument";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
+import original from "../../../../../packages/totem-original/document.json";
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -25,7 +24,7 @@ export async function GET() {
 export async function POST(request:Request) {
   try {
     const auth=await requireUser(); if(auth.error)return auth.error;
-    const body=createSchema.parse(await request.json()); const id=randomUUID(); const doc=body.document??createCanvasDocument(JSON.parse(await readFile(path.resolve(process.cwd(),"..","packages/totem-original/document.json"),"utf8")),body.name);
+    const body=createSchema.parse(await request.json()); const id=randomUUID(); const doc=body.document??createCanvasDocument(structuredClone(original) as VisualisationDocument,body.name);
     const document={...doc,name:body.name};
     const conflict=await withTransaction(async(client)=>{
       const duplicate=await client.query("SELECT 1 FROM visualisations WHERE is_deleted=false AND upper(name)=upper($1) LIMIT 1",[body.name]);

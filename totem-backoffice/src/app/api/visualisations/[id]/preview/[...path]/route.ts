@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { requireUser } from "@/lib/auth";
 import { getDb } from "@/lib/db";
-import { buildWebBundle, getWebSourceFile, injectWebEditor, resolveDocumentMedia, templateOverridesScript } from "@/lib/webPublication";
+import { buildWebBundle, repoRoot, getWebSourceFile, injectWebEditor, resolveDocumentMedia, templateOverridesScript } from "@/lib/webPublication";
 import { getMediaEnvironment } from "@/lib/env";
 import { getBlobClient } from "@/lib/blobStorage";
 import type { VisualisationDocument } from "@/types/content";
@@ -11,7 +11,6 @@ import manifest from "../../../../../../../../packages/totem-original/manifest.j
 
 export const runtime = "nodejs";
 const mime:Record<string,string>={".html":"text/html; charset=utf-8",".css":"text/css; charset=utf-8",".js":"text/javascript; charset=utf-8",".json":"application/json",".svg":"image/svg+xml",".png":"image/png",".jpg":"image/jpeg",".jpeg":"image/jpeg",".gif":"image/gif",".mp4":"video/mp4",".woff2":"font/woff2"};
-const repoRoot=path.resolve(process.cwd(),"..");
 const responseBody=(data:Uint8Array)=>data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength) as ArrayBuffer;
 type Context={params:Promise<{id:string;path:string[]}>};
 

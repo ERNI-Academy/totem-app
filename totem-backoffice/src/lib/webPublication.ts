@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getDb } from "./db";
@@ -7,7 +8,8 @@ import { getBlobClient } from "./blobStorage";
 import type { VisualisationDocument } from "@/types/content";
 import manifest from "../../../packages/totem-original/manifest.json";
 
-const repoRoot=path.resolve(process.cwd(),"..");
+export const repoRoot = existsSync(path.resolve(process.cwd(),"packages/totem-original/web/index.html"))
+  ? process.cwd() : path.resolve(process.cwd(),"..");
 const sourceRoot=path.join(repoRoot,"packages/totem-original/web");
 const sha=(data:Buffer|string)=>createHash("sha256").update(data).digest("hex");
 const safeExt=(name:string)=>/\.[a-z0-9]{1,8}$/i.exec(name)?.[0].toLowerCase()||".bin";
@@ -102,7 +104,8 @@ export async function buildWebBundle(document:VisualisationDocument, exactSource
 export function makeZip(files:Map<string,Buffer>){
   const crcTable=Uint32Array.from({length:256},(_,n)=>{let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;return c>>>0;});
   const crc32=(b:Buffer)=>{let c=0xffffffff;for(const x of b)c=crcTable[(c^x)&255]^(c>>>8);return(c^0xffffffff)>>>0;};
-  const dosDate=new Date(),time=(dosDate.getHours()<<11)|(dosDate.getMinutes()<<5)|(dosDate.getSeconds()>>1),date=((dosDate.getFullYear()-1980)<<9)|((dosDate.getMonth()+1)<<5)|dosDate.getDate();
+  // A fixed DOS timestamp keeps ZIP hashes stable across retries.
+  const time=0,date=33;
   const locals:Buffer[]=[],centrals:Buffer[]=[];let offset=0;
   for(const [name,data] of files){const filename=Buffer.from(name),crc=crc32(data),local=Buffer.alloc(30),central=Buffer.alloc(46);
     local.writeUInt32LE(0x04034b50,0);local.writeUInt16LE(20,4);local.writeUInt16LE(0x800,6);local.writeUInt16LE(0,8);local.writeUInt16LE(time,10);local.writeUInt16LE(date,12);local.writeUInt32LE(crc,14);local.writeUInt32LE(data.length,18);local.writeUInt32LE(data.length,22);local.writeUInt16LE(filename.length,26);local.writeUInt16LE(0,28);locals.push(local,filename,data);

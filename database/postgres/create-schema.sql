@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS visualisation_versions (
   published_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (visualisation_id, version_number)
 );
+ALTER TABLE visualisation_versions ADD COLUMN IF NOT EXISTS catalog_artifact jsonb;
 CREATE INDEX IF NOT EXISTS ix_visualisation_versions_latest ON visualisation_versions(visualisation_id, version_number DESC);
 
 CREATE TABLE IF NOT EXISTS templates (

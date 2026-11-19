@@ -41,7 +41,7 @@ val bundleTotemOriginal by tasks.registering(Exec::class) {
     workingDir(rootProject.projectDir.parentFile)
     commandLine("npm", "run", "build:totem-apk")
     inputs.dir(rootProject.file("../packages/totem-original/web"))
-    inputs.dir(rootProject.file("../packages/totem-original/resources"))
+    inputs.dir(rootProject.file("../packages/kiosk"))
     inputs.file(rootProject.file("../scripts/build-totem-apk.mjs"))
     inputs.file(rootProject.file("../scripts/verify-totem-resources.mjs"))
     inputs.file(rootProject.file("../packages/totem-original/manifest.json"))

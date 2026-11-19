@@ -17,13 +17,14 @@ function getStorage() {
 
 export function createBlobName(assetId: string) { return `assets/${assetId}`; }
 
-export function createBlobSas(blobName: string, permissions: "cw" | "r", minutes: number) {
+export function createBlobSas(blobName: string, permissions: "cw" | "r", minutes: number, downloadName?: string) {
   const { container, accountName, credential } = getStorage();
   const expiresOn = new Date(Date.now() + minutes * 60_000);
   const sas = generateBlobSASQueryParameters({
     containerName: container.containerName,
     blobName,
     permissions: BlobSASPermissions.parse(permissions),
+    contentDisposition: downloadName ? `attachment; filename="${downloadName}"` : undefined,
     startsOn: new Date(Date.now() - 60_000),
     expiresOn,
   }, credential).toString();

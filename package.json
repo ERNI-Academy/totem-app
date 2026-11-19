@@ -16,14 +16,17 @@
     "typecheck": "npm --workspace totem-backoffice run typecheck",
     "test": "npm --workspace totem-backoffice run test",
     "totem:import": "node scripts/import-totem-original.mjs",
-    "build:totem-apk": "node --env-file=totem-backoffice/.env.local scripts/build-totem-apk.mjs",
+    "build:totem-apk": "node scripts/build-totem-apk.mjs",
     "preview:totem": "npm run build:totem-apk && node tests/totem-original/server.mjs",
     "totem:sync-blob": "node --env-file=totem-backoffice/.env.local scripts/sync-totem-blob.mjs",
     "test:totem": "playwright test --config tests/totem-original/playwright.config.mjs",
-    "test:editor": "playwright test --config tests/backoffice/playwright.config.mjs"
+    "test:editor": "playwright test --config tests/backoffice/playwright.config.mjs",
+    "catalog:prepare": "npm --workspace totem-backoffice run catalog:prepare"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",
-    "sharp": "^0.35.5"
+    "@zip.js/zip.js": "2.25.0",
+    "sharp": "^0.35.5",
+    "tsx": "4.23.15"
   }
 }
