@@ -30,12 +30,25 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(randomBytes(48).toString("base64url"));
     const created = await withTransaction(async (client) => {
       const result = await client.query<{ id: string }>(
-        'INSERT INTO users(email,display_name,role,password_hash) VALUES($1,$2,$3,$4) RETURNING id,email,display_name AS "displayName",role',
+        `INSERT INTO users(email, display_name, role, password_hash, activation_required)
+         VALUES($1,$2,$3,$4,true)
+         ON CONFLICT (upper(btrim(email))) DO UPDATE
+           SET display_name=excluded.display_name, role=excluded.role, password_hash=excluded.password_hash,
+               is_active=true, activation_required=true, updated_at=now()
+           WHERE NOT users.is_active
+         RETURNING id,email,display_name AS "displayName",role`,
         [body.email.trim(), body.displayName, body.role, passwordHash],
       );
       const user = result.rows[0];
+      if (!user) return null;
+      await client.query(
+        "UPDATE one_time_tokens SET expires_at=LEAST(expires_at,clock_timestamp()), token_ciphertext=NULL WHERE user_id=$1 AND used_at IS NULL",
+        [user.id],
+      );
+      await client.query("UPDATE user_sessions SET revoked_at=now() WHERE user_id=$1 AND revoked_at IS NULL", [user.id]);
       return { user, ...await issueActivationLink(client, user.id, request) };
     });
+    if (!created) return NextResponse.json({ error: "An active user already uses this email address." }, { status: 409, headers: privateResponse });
     return NextResponse.json(created, { status: 201, headers: privateResponse });
   } catch (error) { return apiError(error); }
 }

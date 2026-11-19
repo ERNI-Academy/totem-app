@@ -8,11 +8,19 @@ const COOKIE = "totem_session";
 const SESSION_DAYS = 14;
 function hash(value: string) { return createHash("sha256").update(value).digest("hex"); }
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, verifiedPasswordHash?: string) {
   const token = randomBytes(32).toString("base64url");
   const expires = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-  await getDb().query("INSERT INTO user_sessions(user_id,token_hash,expires_at) VALUES($1,$2,$3)", [userId, hash(token), expires]);
+  const result = await getDb().query(
+    `INSERT INTO user_sessions(user_id,token_hash,expires_at)
+     SELECT id,$2,$3 FROM users
+     WHERE id=$1 AND is_active AND NOT activation_required AND ($4::text IS NULL OR password_hash=$4)
+     FOR UPDATE`,
+    [userId, hash(token), expires, verifiedPasswordHash ?? null],
+  );
+  if (!result.rowCount) return false;
   (await cookies()).set(COOKIE, token, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/", expires });
+  return true;
 }
 
 export async function destroySession() {

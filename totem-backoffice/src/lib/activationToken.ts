@@ -26,9 +26,11 @@ export function decryptActivationToken(value: string) {
 
 
 export const pendingActivation = `
+  u.activation_required OR (
   EXISTS (SELECT 1 FROM one_time_tokens WHERE user_id=u.id AND purpose='activation')
   AND NOT EXISTS (SELECT 1 FROM one_time_tokens WHERE user_id=u.id AND purpose='activation' AND used_at IS NOT NULL)
   AND NOT EXISTS (SELECT 1 FROM user_sessions WHERE user_id=u.id)
+  )
 `;
 
 export async function issueActivationLink(client: DbClient, userId: string, request: Request) {

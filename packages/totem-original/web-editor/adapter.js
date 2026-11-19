@@ -1,7 +1,7 @@
 (() => {
   let editing = new URLSearchParams(location.search).get('editor') === '1';
   let state = window.__TOTEM_WEB_DOCUMENT__ || {};
-  let selectedCanvas = null, selectedNode = null, viewScreen = null, drag = null, rendered = '';
+  let selectedCanvas = null, selectedNode = null, viewScreen = null, drag = null, rendered = '', dragFrame = 0, pendingPointer = null;
   const basePositions = new WeakMap();
   const stageNode = document.querySelector('#stage');
   const send = (type, data = {}) => {
@@ -199,14 +199,24 @@
     if(current.id!==state.screens[0]?.id){const back=document.createElement('button');back.className='bo-back';back.dataset.boBack='true';back.textContent='← Inicio';back.addEventListener('click',()=>setViewScreen(state.screens[0].id));canvas.appendChild(back);}
     showSelection();
   };
-  const applyAll = () => {
-    renderCanvas();
+  const applyOverridesAndMedia = () => {
     Object.entries(window.__TOTEM_WEB_OVERRIDES__||{}).forEach(([selector,value])=>apply(selector,value));
     Object.entries(window.__TOTEM_WEB_MEDIA__||{}).forEach(([selector,src])=>apply(selector,{...(window.__TOTEM_WEB_OVERRIDES__?.[selector]||{}),src}));
     showSelection();
   };
-  let scheduled=false;
-  new MutationObserver(()=>{if(!scheduled){scheduled=true;queueMicrotask(()=>{scheduled=false;applyAll();});}}).observe(document.body,{childList:true,subtree:true,characterData:true});
+  const applyAll = () => { renderCanvas(); applyOverridesAndMedia(); };
+  let mutationFrame=0;
+  new MutationObserver(records=>{
+    // Canvas edits are rendered from data; observing their DOM mutations would
+    // re-run template work while the pointer is moving an element.
+    if(state.contentMode==='canvas'||mutationFrame)return;
+    const relevant=records.some(record=>{
+      const target=record.target instanceof Element?record.target:record.target.parentElement;
+      return !target?.closest('#bo-selection,#bo-canvas');
+    });
+    if(!relevant)return;
+    mutationFrame=requestAnimationFrame(()=>{mutationFrame=0;applyOverridesAndMedia();});
+  }).observe(stageNode||document.body,{childList:true,subtree:true,characterData:true});
   window.addEventListener('message',event=>{
     if(event.source!==parent||event.origin!==location.origin||!event.data)return;
     const data=event.data;
@@ -243,17 +253,20 @@
     if(shellNode?.dataset.totemShell){
       selectWeb(shellNode);event.preventDefault();shellNode.setPointerCapture(event.pointerId);
       const rect=shellNode.getBoundingClientRect(),box=stageBox(),s=scale();
-      drag={node:shellNode,selector:selectorFor(shellNode),pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,handle:handle?.dataset.handle,original:{x:(rect.left-box.left)*s,y:(rect.top-box.top)*s,width:rect.width*s,height:rect.height*s},next:null};
+      const original={x:(rect.left-box.left)*s,y:(rect.top-box.top)*s,width:rect.width*s,height:rect.height*s};
+      if(!basePositions.has(shellNode))basePositions.set(shellNode,{x:original.x,y:original.y});
+      const translate=getComputedStyle(shellNode).translate.split(/\s+/);
+      drag={node:shellNode,selector:selectorFor(shellNode),pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,scale:s,initialTranslate:{x:parseFloat(translate[0])||0,y:parseFloat(translate[1])||0},handle:handle?.dataset.handle,original,next:null};
       return;
     }
     if(!node)return;
     selectCanvas(node.dataset.boElement);const el=canvasElement(node.dataset.boElement);if(!el||el.locked)return;
     event.preventDefault();node.setPointerCapture(event.pointerId);
-    drag={node,id:el.id,screenId:screen().id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,handle:handle?.dataset.handle,original:{x:el.x,y:el.y,width:el.width,height:el.height},next:null};
+    drag={node,id:el.id,screenId:screen().id,pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,scale:scale(),handle:handle?.dataset.handle,original:{x:el.x,y:el.y,width:el.width,height:el.height},next:null};
   },true);
-  document.addEventListener('pointermove',event=>{
-    if(!drag||event.pointerId!==drag.pointerId)return;event.preventDefault();event.stopImmediatePropagation();
-    const dx=(event.clientX-drag.startX)*scale(),dy=(event.clientY-drag.startY)*scale(),o=drag.original,h=drag.screenId?(screen().mode==='embedded'?1080:1920):1920;
+  const moveDrag=(clientX,clientY)=>{
+    if(!drag)return;
+    const dx=(clientX-drag.startX)*drag.scale,dy=(clientY-drag.startY)*drag.scale,o=drag.original,h=drag.screenId?(screen().mode==='embedded'?1080:1920):1920;
     let {x,y,width,height}=o;
     if(drag.handle){
       let left=o.x,right=o.x+o.width,top=o.y,bottom=o.y+o.height;
@@ -264,9 +277,25 @@
       x=left;y=top;width=right-left;height=bottom-top;
     }else{x=Math.max(0,Math.min(1080-width,o.x+dx));y=Math.max(0,Math.min(h-height,o.y+dy));}
     drag.next={x:Math.round(x),y:Math.round(y),width:Math.round(width),height:Math.round(height)};
-    Object.assign(drag.node.style,{left:`${x}px`,top:`${y}px`,width:`${width}px`,height:`${height}px`});showSelection();
+    if(drag.selector){
+      drag.node.style.translate=`${drag.initialTranslate.x+x-o.x}px ${drag.initialTranslate.y+y-o.y}px`;
+      Object.assign(drag.node.style,{width:`${width}px`,height:`${height}px`});
+    }else Object.assign(drag.node.style,{left:`${x}px`,top:`${y}px`,width:`${width}px`,height:`${height}px`});
+    // Geometry is already known here. Updating the selection from these values
+    // avoids a forced getBoundingClientRect/layout on every pointer event.
+    const selectionY=y+(drag.screenId&&screen().mode==='embedded'?690:0);
+    Object.assign(selection.style,{left:`${x}px`,top:`${selectionY}px`,width:`${width}px`,height:`${height}px`});
+    selection.hidden=false;
+  };
+  document.addEventListener('pointermove',event=>{
+    if(!drag||event.pointerId!==drag.pointerId)return;event.preventDefault();event.stopImmediatePropagation();
+    pendingPointer={x:event.clientX,y:event.clientY};
+    if(!dragFrame)dragFrame=requestAnimationFrame(()=>{dragFrame=0;const point=pendingPointer;pendingPointer=null;if(point)moveDrag(point.x,point.y);});
   },true);
-  const finishDrag=event=>{if(!drag||event.pointerId!==drag.pointerId)return;const finished=drag;drag=null;
+  const finishDrag=event=>{if(!drag||event.pointerId!==drag.pointerId)return;event.preventDefault();event.stopImmediatePropagation();
+    if(dragFrame){cancelAnimationFrame(dragFrame);dragFrame=0;}
+    const point=pendingPointer;pendingPointer=null;if(point)moveDrag(point.x,point.y);
+    const finished=drag;drag=null;
     if(finished.next){if(finished.selector)send('totem-shell-changed',{selector:finished.selector,changes:finished.next});else send('totem-canvas-changed',{id:finished.id,screenId:finished.screenId,changes:finished.next});}};
   document.addEventListener('pointerup',finishDrag,true);document.addEventListener('pointercancel',finishDrag,true);
   document.addEventListener('keydown',event=>{

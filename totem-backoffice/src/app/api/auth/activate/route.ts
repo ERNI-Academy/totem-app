@@ -26,7 +26,7 @@ export async function POST(request: Request) {
         [hash, user.id],
       );
       if (!used.rowCount) return false;
-      await client.query("UPDATE users SET password_hash=$1,updated_at=now() WHERE id=$2", [password, user.id]);
+      await client.query("UPDATE users SET password_hash=$1,activation_required=false,updated_at=now() WHERE id=$2", [password, user.id]);
       return true;
     });
     if (!done) return NextResponse.json({ error: "This activation link is invalid, expired or already used." }, { status: 400 });

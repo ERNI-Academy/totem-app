@@ -404,6 +404,10 @@ export function Dashboard() {
     setDraft({ ...draft, webPublication: undefined, webTemplate: { ...draft.webTemplate, overrides: { ...draft.webTemplate.overrides, [selector]: next } } });
     if (selector === webSelection.selector) setWebSelection({ ...webSelection, [field]: value });
   }
+  function updateWebOverrides(selector: string, changes: Partial<import("@/types/content").WebElementOverride>) {
+    setDraft(d=>d?.webTemplate?{...d,webPublication:undefined,webTemplate:{...d.webTemplate,overrides:{...d.webTemplate.overrides,[selector]:{...d.webTemplate.overrides[selector],...changes}}}}:d);
+    setWebSelection(current=>current?.selector===selector?{...current,...changes}:current);
+  }
   function setShellMediaMode(mode: "video" | "image" | "color") {
     if(!draft?.webTemplate||!webSelection)return;
     const selector=webSelection.selector,media={...draft.webTemplate.media};
@@ -965,7 +969,7 @@ export function Dashboard() {
                         onSelect={element=>{setWebSelection(element);setActiveElement(null);setShellTarget(/data-totem-shell="([^"]+)"/.exec(element.selector)?.[1]??null);}}
                         onCanvasSelect={(id,screenId)=>{setActiveElement(id);setActiveScreen(screenId);setWebSelection(null);setShellTarget(null);}}
                         onCanvasChange={updateElement} onCanvasAdd={addElement} onCanvasDelete={removeElement}
-                        onShellChange={(selector,changes)=>Object.entries(changes).forEach(([field,value])=>updateWebOverride(field as keyof import("@/types/content").WebElementOverride,value as string|number,selector))}
+                        onShellChange={updateWebOverrides}
                         onScreenChange={screenId=>{setActiveScreen(screenId);setActiveElement(null);}} />
                     </div>
                   ) : (
@@ -1042,7 +1046,7 @@ export function Dashboard() {
                       </div>
                       {chosen && !preview && (
                         <Moveable
-                          key={`${activeScreen}:${chosen.id}:${chosen.x}:${chosen.y}:${chosen.width}:${chosen.height}`}
+                          key={`${activeScreen}:${chosen.id}`}
                           target={`[data-element-id="${chosen.id}"]`}
                           draggable
                           resizable
@@ -1063,17 +1067,20 @@ export function Dashboard() {
                             target: HTMLElement | SVGElement;
                           }) => {
                             const rect = target.getBoundingClientRect(),
-                              parent =
-                                target.parentElement!.getBoundingClientRect(),
-                              scale = 1080 / parent.width;
+                              parent = target.parentElement!.getBoundingClientRect(),
+                              scale = 1080 / parent.width,
+                              style = getComputedStyle(target),
+                              translate = style.transform === "none"
+                                ? new DOMPoint(0, 0)
+                                : new DOMPoint(0, 0).matrixTransform(new DOMMatrix(style.transform));
                             updateElement(chosen.id, {
                               x: Math.max(
                                 0,
-                                Math.round((rect.left - parent.left) * scale),
+                                Math.round((rect.left - parent.left - translate.x) * scale),
                               ),
                               y: Math.max(
                                 0,
-                                Math.round((rect.top - parent.top) * scale),
+                                Math.round((rect.top - parent.top - translate.y) * scale),
                               ),
                             });
                             target.style.transform = "";
@@ -1099,9 +1106,12 @@ export function Dashboard() {
                             target: HTMLElement | SVGElement;
                           }) => {
                             const rect = target.getBoundingClientRect(),
-                              parent =
-                                target.parentElement!.getBoundingClientRect(),
-                              scale = 1080 / parent.width;
+                              parent = target.parentElement!.getBoundingClientRect(),
+                              scale = 1080 / parent.width,
+                              style = getComputedStyle(target),
+                              translate = style.transform === "none"
+                                ? new DOMPoint(0, 0)
+                                : new DOMPoint(0, 0).matrixTransform(new DOMMatrix(style.transform));
                             updateElement(chosen.id, {
                               width: Math.max(
                                 40,
@@ -1113,11 +1123,11 @@ export function Dashboard() {
                               ),
                               x: Math.max(
                                 0,
-                                Math.round((rect.left - parent.left) * scale),
+                                Math.round((rect.left - parent.left - translate.x) * scale),
                               ),
                               y: Math.max(
                                 0,
-                                Math.round((rect.top - parent.top) * scale),
+                                Math.round((rect.top - parent.top - translate.y) * scale),
                               ),
                             });
                             target.style.transform = "";
